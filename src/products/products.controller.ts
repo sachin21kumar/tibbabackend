@@ -37,6 +37,7 @@ export class ProductController {
   @Get()
   async getProducts(
     @Query('categoryId') categoryId?: string,
+    @Query('name') name?: string, // <-- new filter by name
     @Query('page') page: string = '1',
     @Query('limit') limit: string = '9',
     @Query('sortBy') sortBy: 'price' | 'name' = 'price',
@@ -44,6 +45,7 @@ export class ProductController {
   ) {
     return this.productService.getProducts(
       categoryId,
+      name, // <-- pass to service
       parseInt(page),
       parseInt(limit),
       sortBy,
@@ -61,10 +63,7 @@ export class ProductController {
       }),
     }),
   )
-  async createProduct(
-    @Body() body: any,
-    @UploadedFile() image?: any,
-  ) {
+  async createProduct(@Body() body: any, @UploadedFile() image?: any) {
     return this.productService.createProduct(body, image);
   }
 
@@ -73,7 +72,7 @@ export class ProductController {
     return this.productService.getProductById(id);
   }
 
- @Put(':id')
+  @Put(':id')
   @UseInterceptors(
     FileInterceptor('image', {
       storage: diskStorage({
@@ -91,8 +90,7 @@ export class ProductController {
     return this.productService.updateProduct(id, body, image);
   }
 
-
-   @Delete(':id')
+  @Delete(':id')
   async deleteProduct(@Param('id') id: string) {
     return this.productService.deleteProduct(id);
   }

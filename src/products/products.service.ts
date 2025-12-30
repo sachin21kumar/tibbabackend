@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Product, ProductDocument } from './products.schema';
@@ -111,17 +115,25 @@ export class ProductService {
 
   async getProducts(
     categoryId?: string,
+    name?: string, // <-- new parameter
     page: number = 1,
     limit: number = 9,
     sortBy: 'price' | 'name' = 'price',
     order: 'asc' | 'desc' = 'asc',
   ) {
     const filter: any = {};
+
     if (categoryId) {
       filter.categoryId = new Types.ObjectId(categoryId);
     }
+
+    if (name) {
+      filter.name = { $regex: name, $options: 'i' }; // case-insensitive partial match
+    }
+
     const sortOption: any = {};
     sortOption[sortBy] = order === 'asc' ? 1 : -1;
+
     const total = await this.productModel.countDocuments(filter);
     const products = await this.productModel
       .find(filter)
@@ -144,11 +156,9 @@ export class ProductService {
     return product;
   }
 
-async createProduct(data: any, image?: any) {
+  async createProduct(data: any, image?: any) {
     if (!data.name || !data.price || !data.categoryId) {
-      throw new BadRequestException(
-        'name, price and categoryId are required',
-      );
+      throw new BadRequestException('name, price and categoryId are required');
     }
 
     return this.productModel.create({
@@ -159,8 +169,6 @@ async createProduct(data: any, image?: any) {
       imagePath: image ? image.filename : '',
     });
   }
-
-  
 
   /* ================= DELETE PRODUCT ================= */
   async deleteProduct(id: string) {
@@ -202,5 +210,4 @@ async createProduct(data: any, image?: any) {
       product,
     };
   }
-
 }

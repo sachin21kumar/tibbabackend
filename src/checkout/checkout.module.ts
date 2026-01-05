@@ -8,6 +8,7 @@ import { OrdersController } from './checkout.controller';
 import { OrdersService } from './checkout.service';
 import { CartModule } from 'src/cart/cart.module';
 import { EmailModule } from 'src/email/email.module';
+import { LocationsModule } from 'src/locations/locations.module';
 
 @Module({
   imports: [
@@ -16,7 +17,8 @@ import { EmailModule } from 'src/email/email.module';
     ]),
     StripeModule,
     CartModule,
-    EmailModule
+    EmailModule,
+    LocationsModule
   ],
   controllers: [OrdersController],
   providers: [OrdersService],

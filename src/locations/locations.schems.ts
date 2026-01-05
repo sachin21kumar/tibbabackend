@@ -17,6 +17,12 @@ export class Location {
   @Prop({ required: true })
   location: string; // ✅ single string instead of latitude/longitude
 
+  @Prop({ required: true })
+  lat: number; // ✅ Required latitude
+
+  @Prop({ required: true })
+  lng: number; // ✅ Required longitude
+
   @Prop()
   operation_hours?: string;
 
@@ -28,6 +34,12 @@ export class Location {
 
   @Prop()
   mobileNumber?: string;
+
+  @Prop({ default: 10 })
+  deliveryRadiusKm: number;
+
+  @Prop({required:true})
+  imagePath:string
 }
 
 export const LocationSchema = SchemaFactory.createForClass(Location);

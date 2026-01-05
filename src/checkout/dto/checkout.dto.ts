@@ -1,5 +1,21 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString, IsNumberString } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsNumberString,
+  IsMongoId,
+  ValidateNested,
+  IsNumber,
+} from 'class-validator';
+class LatLng {
+  @IsNumber()
+  lat: number;
 
+  @IsNumber()
+  lng: number;
+}
 export class CreateOrderDto {
   @IsString()
   @IsNotEmpty()
@@ -42,4 +58,15 @@ export class CreateOrderDto {
   @IsOptional()
   @IsString()
   orderNotes?: string;
+
+  @IsString()
+  deliveryType: string;
+
+  @IsMongoId()
+  locationId: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => LatLng)
+  addressLatLng?: LatLng;
 }

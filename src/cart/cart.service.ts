@@ -6,8 +6,7 @@ import { Cart } from './cart.schema';
 @Injectable()
 export class CartService {
   constructor(
-       @InjectModel(Cart.name) private readonly cartModel: Model<Cart>,
-
+    @InjectModel(Cart.name) private readonly cartModel: Model<Cart>,
   ) {}
 
   async getCart() {
@@ -27,12 +26,16 @@ export class CartService {
     return { ...cart, totalPrice };
   }
 
-  async addToCart(productId: string, quantity = 1) {
+  async addToCart(productId: string, quantity = 1, locationId: string) {
     const productObjectId = new Types.ObjectId(productId);
-    let cart = await this.cartModel.findOne();
+    const locationObjectId = new Types.ObjectId(locationId);
+
+    // Find cart for this location
+    let cart = await this.cartModel.findOne({ locationId: locationObjectId });
 
     if (!cart) {
       cart = await this.cartModel.create({
+        locationId: locationObjectId,
         items: [{ productId: productObjectId, quantity }],
       });
       return cart;
@@ -43,7 +46,7 @@ export class CartService {
     );
 
     if (itemIndex > -1) {
-      cart.items[itemIndex].quantity += quantity; // ✅ ADD
+      cart.items[itemIndex].quantity += quantity;
     } else {
       cart.items.push({ productId: productObjectId, quantity });
     }
@@ -82,8 +85,8 @@ export class CartService {
 
   async getCartItemByProductId(productId: string) {
     return this.cartModel.findOne(
-      { "items.productId": new Types.ObjectId(productId) },
-      { "items.$": 1 } 
+      { 'items.productId': new Types.ObjectId(productId) },
+      { 'items.$': 1 },
     );
   }
 }

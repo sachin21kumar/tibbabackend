@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
 import { CartService } from './cart.service';
+import { AddToCartDto } from './dto/cart.dto';
 
 @Controller('cart')
 export class CartController {
@@ -11,11 +12,12 @@ export class CartController {
   }
 
   @Post('add')
-  addToCart(
-    @Body('productId') productId: string,
-    @Body('quantity') quantity: number,
-  ) {
-    return this.cartService.addToCart(productId, quantity);
+  addToCart(@Body() addToCartDto: AddToCartDto) {
+    return this.cartService.addToCart(
+      addToCartDto.productId,
+      addToCartDto.quantity || 1,
+      addToCartDto.locationId,
+    );
   }
 
   @Post('update')

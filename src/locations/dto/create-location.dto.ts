@@ -1,4 +1,11 @@
-import { IsString, IsNotEmpty, IsEmail, IsOptional } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  IsString,
+  IsNotEmpty,
+  IsEmail,
+  IsOptional,
+  IsNumber,
+} from 'class-validator';
 
 export class CreateLocationDto {
   @IsString()
@@ -32,4 +39,16 @@ export class CreateLocationDto {
   @IsOptional()
   @IsString()
   mobileNumber?: string;
+
+  @Type(() => Number)
+  @IsNumber()
+  lat: number;
+
+  @Type(() => Number)
+  @IsNumber()
+  lng: number;
+
+  @IsOptional()
+  @IsString()
+  imagePath?: string;
 }

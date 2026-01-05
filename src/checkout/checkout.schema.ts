@@ -59,8 +59,35 @@ export class Order {
   @Prop({ required: true })
   total: number;
 
+  @Prop({ default: 'New', enum: ['New', 'Accepted', 'Preparing', 'Out for Delivery', 'Delivered', 'Cancelled'] })
+  OrderStatus: string;
+
   @Prop({ default: 'pending' })
   status: string;
+
+  @Prop({ required: true })
+  deliveryType: string;
+
+  @Prop({ required: true, type: Types.ObjectId, ref: 'Locations' })
+  locationId: Types.ObjectId;
+
+  @Prop({
+    type: {
+      lat: { type: Number, required: true },
+      lng: { type: Number, required: true },
+    },
+    required: false,
+  })
+  addressLatLng?: {
+    lat: number;
+    lng: number;
+  };
+
+  @Prop()
+  driverName?: string;
+
+  @Prop()
+  driverPhone?: string;
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);

@@ -12,8 +12,10 @@ export class LocationsService {
     private locationModel: Model<LocationDocument>,
   ) {}
 
-  // Create a new location
-  create(dto: CreateLocationDto) {
+  // ------------------ Existing Methods ------------------
+
+  // ✅ Create a new location (NOW SUPPORTS IMAGE)
+  create(dto: CreateLocationDto & { imagePath?: any }) {
     return this.locationModel.create({
       name: dto.name,
       description: dto.description,
@@ -23,6 +25,9 @@ export class LocationsService {
       branchEmail: dto.branchEmail,
       telephone: dto.telephone,
       mobileNumber: dto.mobileNumber,
+       lat: parseFloat(dto.lat as any),
+    lng: parseFloat(dto.lng as any),
+      imagePath: dto.imagePath || null,
     });
   }
 
@@ -38,9 +43,13 @@ export class LocationsService {
     return location;
   }
 
-  // Update a location by ID
+  // Update a location by ID (NO IMAGE CHANGE HERE – SAFE)
   async update(id: string, dto: UpdateLocationDto) {
-    const updated = await this.locationModel.findByIdAndUpdate(id, { ...dto }, { new: true });
+    const updated = await this.locationModel.findByIdAndUpdate(
+      id,
+      { ...dto },
+      { new: true },
+    );
     if (!updated) throw new NotFoundException('Location not found');
     return updated;
   }
@@ -50,5 +59,31 @@ export class LocationsService {
     const deleted = await this.locationModel.findByIdAndDelete(id);
     if (!deleted) throw new NotFoundException('Location not found');
     return deleted;
+  }
+
+  // ------------------ Selected Location ------------------
+
+  // In-memory storage for selected location ID
+  private selectedLocationId: string | null = null;
+
+  // Set selected location
+  async setSelectedLocation(locationId: string) {
+    const loc = await this.locationModel.findById(locationId);
+    if (!loc) throw new NotFoundException('Location not found');
+    this.selectedLocationId = locationId;
+    return { message: 'Location selected', locationId };
+  }
+
+  // Get selected location
+  getSelectedLocation() {
+    return { locationId: this.selectedLocationId };
+  }
+
+  // Update selected location
+  async updateSelectedLocation(locationId: string) {
+    const loc = await this.locationModel.findById(locationId);
+    if (!loc) throw new NotFoundException('Location not found');
+    this.selectedLocationId = locationId;
+    return { message: 'Selected location updated', locationId };
   }
 }

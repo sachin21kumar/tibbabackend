@@ -84,6 +84,29 @@ export class LocationsController {
     return this.locationsService.update(id, dto);
   }
 
+  @Patch(':id/image')
+@UseInterceptors(
+  FileInterceptor('image', {
+    storage: productImageStorage,
+    fileFilter: (_req, file, cb) => {
+      if (!file.mimetype.match(/\/(jpg|jpeg|png|webp)$/)) {
+        cb(new Error('Only image files are allowed'), false);
+        return;
+      }
+      cb(null, true);
+    },
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  }),
+)
+async updateImage(@Param('id') id: string, @UploadedFile() image?: any) {
+  if (!image) {
+    throw new Error('No image file uploaded');
+  }
+  // Call the new dedicated service method
+  return this.locationsService.updateImage(id, image.filename);
+}
+
+
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.locationsService.remove(id);

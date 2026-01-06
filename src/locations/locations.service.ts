@@ -86,4 +86,15 @@ export class LocationsService {
     this.selectedLocationId = locationId;
     return { message: 'Selected location updated', locationId };
   }
+
+  async updateImage(id: string, imagePath?: string) {
+  const updated = await this.locationModel.findByIdAndUpdate(
+    id,
+    { imagePath: imagePath || null },
+    { new: true },
+  );
+  if (!updated) throw new NotFoundException('Location not found');
+  return updated;
+}
+
 }

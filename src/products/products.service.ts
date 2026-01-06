@@ -113,37 +113,49 @@ export class ProductService {
     });
   }
 
-  async getProducts(
-    categoryId?: string,
-    name?: string, // <-- new parameter
-    page: number = 1,
-    limit: number = 9,
-    sortBy: 'price' | 'name' = 'price',
-    order: 'asc' | 'desc' = 'asc',
-  ) {
-    const filter: any = {};
+ async getProducts(
+  categoryId?: string,
+  name?: string,
+  page: number = 1,
+  limit: number = 9,
+  sortBy: 'price' | 'name' = 'price',
+  order: 'asc' | 'desc' = 'asc',
+) {
+  const filter: any = {};
 
-    if (categoryId) {
-      filter.categoryId = new Types.ObjectId(categoryId);
-    }
-
-    if (name) {
-      filter.name = { $regex: name, $options: 'i' }; // case-insensitive partial match
-    }
-
-    const sortOption: any = {};
-    sortOption[sortBy] = order === 'asc' ? 1 : -1;
-
-    const total = await this.productModel.countDocuments(filter);
-    const products = await this.productModel
-      .find(filter)
-      .sort(sortOption)
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .lean();
-
-    return { data: products, total, page, limit };
+  if (categoryId && categoryId !== 'undefined' && categoryId !== 'null') {
+    filter.categoryId = new Types.ObjectId(categoryId);
   }
+
+  if (name && name.trim() !== '') {
+    filter.name = { $regex: name.trim(), $options: 'i' };
+  }
+
+  // ✅ Default: insertion order (oldest first)
+  const sortOption: any = {};
+
+  // Apply sorting ONLY when filter or explicit sort is used
+  const hasFilter = Object.keys(filter).length > 0;
+
+  if (hasFilter || sortBy !== 'price' || order !== 'asc') {
+    sortOption[sortBy] = order === 'asc' ? 1 : -1;
+  } else {
+    // fallback to insertion order
+    sortOption._id = 1;
+  }
+
+  const total = await this.productModel.countDocuments(filter);
+  const products = await this.productModel
+    .find(filter)
+    .sort(sortOption)
+    .skip((page - 1) * limit)
+    .limit(limit)
+    .lean();
+
+  return { data: products, total, page, limit };
+}
+
+
 
   async getProductById(id: string) {
     if (!Types.ObjectId.isValid(id)) {

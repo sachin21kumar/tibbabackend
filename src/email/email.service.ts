@@ -35,7 +35,6 @@ export class EmailService {
 
     try {
       await sgMail.send(msg);
-      console.log('Order confirmation email sent');
     } catch (error) {
       console.error('Error sending email:', error);
     }

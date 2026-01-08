@@ -18,8 +18,7 @@ export class StripeService {
   }
 
   async createPaymentIntent(amount: number,orderId: string) {
-    const amountInCents = Math.round(amount * 100); // Convert dollars to cents
-    console.log(amountInCents, 'amountInCents');
+    const amountInCents = Math.round(amount * 100);
 
     const data=await this.stripe.paymentIntents.create({
       amount: amountInCents,
@@ -29,7 +28,6 @@ export class StripeService {
       },
       metadata: { orderId }
     });
-    console.log(data,"data")
     return data
   }
 }

@@ -46,7 +46,6 @@ export class OrdersService {
 
   async checkout(dto: CreateOrderDto) {
     const cart = await this.cartModel.findOne().populate('items.productId');
-    console.log(cart?.items, 'cart+++++');
     if (!cart || cart.items.length === 0) {
       throw new NotFoundException(
         'Your Cart is empty please add product on cart.',
@@ -63,18 +62,11 @@ export class OrdersService {
 
       // Get selected branch location
       const location = await this.locationsService.findOne(dto.locationId);
-      console.log(location, 'location909090');
       if (!location?.location || !location.lat || !location.lng) {
         throw new BadRequestException(
           'Branch location coordinates are not set.',
         );
       }
-      console.log(
-        dto.addressLatLng.lat,
-        dto.addressLatLng.lng,
-        'fromcheckoutAddressLating',
-      );
-      console.log(location.lat, location.lng, 'from location lating');
       const distance = this.getDistanceKm(
         dto.addressLatLng.lat,
         dto.addressLatLng.lng,
@@ -92,7 +84,6 @@ export class OrdersService {
     }
 
     const items = cart.items.map((item: any) => {
-      console.log(item); // log each item
       return {
         productId: item.productId._id,
         name: item.productId.name,
@@ -105,7 +96,6 @@ export class OrdersService {
     const subtotal = items.reduce((s, i) => s + i.subtotal, 0);
     const shipping = 0;
     const total = subtotal + shipping;
-    console.log(total, 'total++++');
 
     const order = new this.orderModel({
       ...dto,

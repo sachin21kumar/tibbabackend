@@ -71,7 +71,7 @@ export class LocationsController {
 
   @Get()
   findAll() {
-    return this.locationsService.findAll();
+    return this.locationsService.findAll().lean();
   }
 
   @Get(':id')

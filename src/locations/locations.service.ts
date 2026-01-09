@@ -33,12 +33,12 @@ export class LocationsService {
 
   // Get all locations sorted by creation date (descending)
   findAll() {
-    return this.locationModel.find().sort({ createdAt: -1 });
+    return this.locationModel.find().sort({ createdAt: -1 }).lean();
   }
 
   // Get one location by ID
   async findOne(id: string) {
-    const location = await this.locationModel.findById(id);
+    const location = await this.locationModel.findById(id).lean();
     if (!location) throw new NotFoundException('Location not found');
     return location;
   }
@@ -49,14 +49,14 @@ export class LocationsService {
       id,
       { ...dto },
       { new: true },
-    );
+    ).lean();
     if (!updated) throw new NotFoundException('Location not found');
     return updated;
   }
 
   // Remove a location by ID
   async remove(id: string) {
-    const deleted = await this.locationModel.findByIdAndDelete(id);
+    const deleted = await this.locationModel.findByIdAndDelete(id).lean();
     if (!deleted) throw new NotFoundException('Location not found');
     return deleted;
   }
@@ -68,7 +68,7 @@ export class LocationsService {
 
   // Set selected location
   async setSelectedLocation(locationId: string) {
-    const loc = await this.locationModel.findById(locationId);
+    const loc = await this.locationModel.findById(locationId).lean();
     if (!loc) throw new NotFoundException('Location not found');
     this.selectedLocationId = locationId;
     return { message: 'Location selected', locationId };
@@ -81,7 +81,7 @@ export class LocationsService {
 
   // Update selected location
   async updateSelectedLocation(locationId: string) {
-    const loc = await this.locationModel.findById(locationId);
+    const loc = await this.locationModel.findById(locationId).lean();
     if (!loc) throw new NotFoundException('Location not found');
     this.selectedLocationId = locationId;
     return { message: 'Selected location updated', locationId };
@@ -92,7 +92,7 @@ export class LocationsService {
     id,
     { imagePath: imagePath || null },
     { new: true },
-  );
+  ).lean();
   if (!updated) throw new NotFoundException('Location not found');
   return updated;
 }

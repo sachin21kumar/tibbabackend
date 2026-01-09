@@ -10,7 +10,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 import csv from 'csv-parser';
 import axios from 'axios';
+// import NodeCache from 'node-cache';
 
+// const cache = new NodeCache({ stdTTL: 60 });
 @Injectable()
 export class ProductService {
   constructor(
@@ -150,7 +152,7 @@ export class ProductService {
     .sort(sortOption)
     .skip((page - 1) * limit)
     .limit(limit)
-    .lean();
+    .lean().lean();
 
   return { data: products, total, page, limit };
 }
@@ -184,7 +186,7 @@ export class ProductService {
 
   /* ================= DELETE PRODUCT ================= */
   async deleteProduct(id: string) {
-    const product = await this.productModel.findByIdAndDelete(id);
+    const product = await this.productModel.findByIdAndDelete(id).lean();
 
     if (!product) {
       throw new NotFoundException('Product not found');
@@ -199,7 +201,7 @@ export class ProductService {
     if (!Types.ObjectId.isValid(id))
       throw new BadRequestException('Invalid product ID');
 
-    const product = await this.productModel.findById(id);
+    const product = await this.productModel.findById(id).lean();
     if (!product) throw new NotFoundException('Product not found');
 
     // 🔥 Delete old image if new uploaded

@@ -45,7 +45,7 @@ export class OrdersService {
   }
 
   async checkout(dto: CreateOrderDto) {
-    const cart = await this.cartModel.findOne().populate('items.productId');
+    const cart = await this.cartModel.findOne().populate('items.productId').lean();
     if (!cart || cart.items.length === 0) {
       throw new NotFoundException(
         'Your Cart is empty please add product on cart.',
@@ -121,7 +121,7 @@ export class OrdersService {
   async confirmPayment(orderId: string) {
     const updatedOrder = await this.orderModel.findByIdAndUpdate(orderId, {
       status: 'paid',
-    });
+    }).lean();
 
     await this.cartModel.deleteMany({});
 
@@ -138,7 +138,7 @@ export class OrdersService {
   }
 
   async getOrdersByLocation(locationId: string) {
-    return this.orderModel.find({ locationId }).sort({ createdAt: -1 });
+    return this.orderModel.find({ locationId }).sort({ createdAt: -1 }).lean();
   }
 
   async updateOrderStatus(orderId: string, dto: UpdateOrderStatusDto) {
@@ -153,6 +153,6 @@ export class OrdersService {
   }
 
   async getAllOrders() {
-    return this.orderModel.find();
+    return this.orderModel.find().lean();
   }
 }

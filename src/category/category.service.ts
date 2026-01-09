@@ -40,7 +40,7 @@ export class CategoryService {
         title: { $regex: search || '', $options: 'i' },
       })
       .skip(skip)
-      .limit(limit);
+      .limit(limit).lean();
 
     return { data: result, page: page, limit: limit };
   }
@@ -50,7 +50,7 @@ export class CategoryService {
       id,
       { title },
       { new: true },
-    );
+    ).lean();
 
     if (!updatedCategory) {
       throw new BadRequestException('Category does not exist.');
@@ -60,7 +60,7 @@ export class CategoryService {
   }
 
   async deleteCategory(id: string) {
-  const deletedCategory = await this.categoryModel.findByIdAndDelete(id);
+  const deletedCategory = await this.categoryModel.findByIdAndDelete(id).lean();
  
   if (!deletedCategory) {
     throw new BadRequestException('Category does not exist.');

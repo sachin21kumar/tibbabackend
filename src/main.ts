@@ -23,6 +23,12 @@ async function bootstrap() {
   // Serve uploads folder statically
   app.useStaticAssets(join(__dirname, '..', 'uploads'), {
     prefix: '/uploads/', // e.g., http://localhost:3000/uploads/images/...
+    setHeaders(res) {
+    res.setHeader(
+      'Cache-Control',
+      'public, max-age=31536000, immutable'
+    );
+  },
   });
 
   await app.listen(process.env.PORT ?? 4000);

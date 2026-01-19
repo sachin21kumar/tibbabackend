@@ -10,6 +10,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ReservationModule } from './reservation/reservation.module';
 import { ReservationHotelModule } from './hotelroom/reservation.module';
 import { LocationsModule } from './locations/locations.module';
+import { AddressValidateModule } from './address-validate/address-validate.module';
 
 @Module({
   imports: [
@@ -23,7 +24,8 @@ import { LocationsModule } from './locations/locations.module';
     OrdersModule,
     ReservationModule,
     ReservationHotelModule,
-    LocationsModule
+    LocationsModule,
+    AddressValidateModule
   ],
   controllers: [AppController],
   providers: [AppService],

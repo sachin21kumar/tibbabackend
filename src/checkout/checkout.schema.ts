@@ -7,28 +7,13 @@ export class Order {
   userId?: Types.ObjectId;
 
   @Prop({ required: true })
-  firstName: string;
+  fullName: string;
 
-  @Prop({ required: true })
-  lastName: string;
-
-  @Prop()
-  company?: string;
-
-  @Prop({ required: true })
-  country: string;
-
+  
   @Prop({ required: true })
   address: string;
 
-  @Prop({ required: true })
-  city: string;
-
-  @Prop({ required: true })
-  state: string;
-
-  @Prop({ required: true })
-  pinCode: string;
+  
 
   @Prop({ required: true })
   phone: string;
@@ -88,6 +73,9 @@ export class Order {
 
   @Prop()
   driverPhone?: string;
+
+  @Prop()
+  paymentMethod?: string;
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);

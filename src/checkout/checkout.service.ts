@@ -45,7 +45,10 @@ export class OrdersService {
   }
 
   async checkout(dto: CreateOrderDto) {
-    const cart = await this.cartModel.findOne().populate('items.productId').lean();
+    const cart = await this.cartModel
+      .findOne()
+      .populate('items.productId')
+      .lean();
     if (!cart || cart.items.length === 0) {
       throw new NotFoundException(
         'Your Cart is empty please add product on cart.',
@@ -107,33 +110,49 @@ export class OrdersService {
     });
 
     await order.save();
-    const paymentIntent = await this.stripeService.createPaymentIntent(
-      total,
-      order._id.toString(),
-    );
+    if (dto.paymentMethod === 'stripe') {
+      const paymentIntent = await this.stripeService.createPaymentIntent(
+        total,
+        order._id.toString(),
+      );
 
+      return {
+        clientSecret: paymentIntent.client_secret,
+        orderId: order._id,
+      };
+    }
     return {
-      clientSecret: paymentIntent.client_secret,
+      clientSecret: null,
       orderId: order._id,
     };
   }
 
   async confirmPayment(orderId: string) {
-    const updatedOrder = await this.orderModel.findByIdAndUpdate(orderId, {
-      status: 'paid',
-    }).lean();
+    const data = await this.orderModel.findById(orderId);
 
-    await this.cartModel.deleteMany({});
-
-    if (!updatedOrder) {
+    if (!data) {
       throw new NotFoundException('Order not found');
     }
-    if (updatedOrder.email) {
+
+    // ✅ Update ONLY if payment method is stripe
+    let updatedOrder: any = data;
+
+    if (data.paymentMethod === 'stripe') {
+      updatedOrder = await this.orderModel
+        .findByIdAndUpdate(orderId, { status: 'paid' }, { new: true })
+        .lean();
+    }
+
+    // 🧹 Clear cart after successful confirmation
+    await this.cartModel.deleteMany({});
+
+    if (updatedOrder?.email) {
       await this.emailService.sendOrderConfirmation(
         updatedOrder.email,
         updatedOrder,
       );
     }
+
     return updatedOrder;
   }
 

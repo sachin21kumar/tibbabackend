@@ -19,35 +19,19 @@ class LatLng {
 export class CreateOrderDto {
   @IsString()
   @IsNotEmpty()
-  firstName: string;
+  fullName: string;
 
-  @IsString()
+   @IsString()
   @IsNotEmpty()
-  lastName: string;
-
-  @IsOptional()
-  @IsString()
-  company?: string;
-
-  @IsString()
-  @IsNotEmpty()
-  country: string;
-
+  buildingName: string;
+ 
   @IsString()
   @IsNotEmpty()
   address: string;
 
   @IsString()
   @IsNotEmpty()
-  city: string;
-
-  @IsString()
-  @IsNotEmpty()
-  state: string;
-
-  @IsString()
-  @IsNotEmpty()
-  pinCode: string;
+  paymentMethod: string;
 
   @IsNumberString()
   phone: string;
@@ -55,9 +39,6 @@ export class CreateOrderDto {
   @IsEmail()
   email: string;
 
-  @IsOptional()
-  @IsString()
-  orderNotes?: string;
 
   @IsString()
   deliveryType: string;

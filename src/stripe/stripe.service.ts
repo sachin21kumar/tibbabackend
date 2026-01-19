@@ -22,7 +22,7 @@ export class StripeService {
 
     const data=await this.stripe.paymentIntents.create({
       amount: amountInCents,
-      currency: 'usd',
+      currency: 'aed',
       automatic_payment_methods: {
         enabled: true,
       },

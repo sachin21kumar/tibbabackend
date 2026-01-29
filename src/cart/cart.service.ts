@@ -63,21 +63,45 @@ export class CartService {
       (item) => item.productId.toString() === productId,
     );
 
-    if (itemIndex > -1) {
-      cart.items[itemIndex].quantity = quantity; // ✅ SET
-      await cart.save();
+    if (itemIndex === -1) {
+      return cart;
     }
 
+    // 🔴 Remove item if quantity is 0 or less
+    if (quantity <= 0) {
+      cart.items.splice(itemIndex, 1);
+    } else {
+      cart.items[itemIndex].quantity = quantity;
+    }
+
+    // 🔥 Delete cart if empty
+    if (cart.items.length === 0) {
+      await this.cartModel.findByIdAndDelete(cart._id);
+      return null;
+    }
+
+    await cart.save();
     return cart;
   }
 
   async removeFromCart(productId: string) {
-    return this.cartModel.findOneAndUpdate(
-      {},
-      { $pull: { items: { productId: new Types.ObjectId(productId) } } },
-      { new: true },
-    );
+  const cart = await this.cartModel.findOne();
+  if (!cart) return null;
+
+  cart.items = cart.items.filter(
+    (item) => item.productId.toString() !== productId,
+  );
+
+  // 🔥 DELETE CART IF EMPTY
+  if (cart.items.length === 0) {
+    await this.cartModel.findByIdAndDelete(cart._id);
+    return null;
   }
+
+  await cart.save();
+  return cart;
+}
+
 
   async clearCart() {
     return this.cartModel.findOneAndDelete({});

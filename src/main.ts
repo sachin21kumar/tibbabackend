@@ -15,11 +15,12 @@ async function bootstrap() {
   /* ===============================
      🔥 FIX 2: PROPER CORS CONFIG
      =============================== */
+  app.setGlobalPrefix('api');
   app.enableCors({
     origin: [
       'http://localhost:3000',
       'http://192.168.1.4:3000',
-      'http://50.6.249.155:3000/'
+      'http://50.6.249.155:3000/',
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -43,10 +44,7 @@ async function bootstrap() {
   app.useStaticAssets(join(__dirname, '..', 'uploads'), {
     prefix: '/uploads/',
     setHeaders(res) {
-      res.setHeader(
-        'Cache-Control',
-        'public, max-age=31536000, immutable',
-      );
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     },
   });
 

@@ -1,6 +1,4 @@
-// src/checkout/checkout.module.ts
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Order, OrderSchema } from './checkout.schema';
 import { StripeModule } from 'src/stripe/stripe.module';

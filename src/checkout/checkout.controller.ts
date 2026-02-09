@@ -7,13 +7,11 @@ import { UpdateOrderStatusDto } from './dto/update.status.dto';
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
-  // STEP 1: Create Payment Intent
-   @Post()
+  @Post()
   checkout(@Body() dto: CreateOrderDto) {
     return this.ordersService.checkout(dto);
   }
 
-  // STEP 2: Confirm order after payment success
   @Post('confirm')
   async confirm(@Body('orderId') orderId: string) {
     return this.ordersService.confirmPayment(orderId);
@@ -25,12 +23,10 @@ export class OrdersController {
   }
 
   @Get('admin/orders')
-  getAllOrders(
-  ) {
+  getAllOrders() {
     return this.ordersService.getAllOrders();
   }
 
-  // Update status or assign driver
   @Patch('admin/:orderId')
   updateOrder(
     @Param('orderId') orderId: string,

@@ -11,11 +11,10 @@ export class CategoryService {
     private readonly categoryModel: Model<Category>,
   ) {}
 
-  // Use DTO here
   async createCategory(createCategoryDto: CreateCategoryDto) {
     const { title } = createCategoryDto;
 
-    if (!title) { 
+    if (!title) {
       throw new BadRequestException('Category title is required.');
     }
 
@@ -40,17 +39,16 @@ export class CategoryService {
         title: { $regex: search || '', $options: 'i' },
       })
       .skip(skip)
-      .limit(limit).lean();
+      .limit(limit)
+      .lean();
 
     return { data: result, page: page, limit: limit };
   }
 
   async updateCategory(title: string, id: string) {
-    const updatedCategory = await this.categoryModel.findByIdAndUpdate(
-      id,
-      { title },
-      { new: true },
-    ).lean();
+    const updatedCategory = await this.categoryModel
+      .findByIdAndUpdate(id, { title }, { new: true })
+      .lean();
 
     if (!updatedCategory) {
       throw new BadRequestException('Category does not exist.');
@@ -60,15 +58,16 @@ export class CategoryService {
   }
 
   async deleteCategory(id: string) {
-  const deletedCategory = await this.categoryModel.findByIdAndDelete(id).lean();
- 
-  if (!deletedCategory) {
-    throw new BadRequestException('Category does not exist.');
+    const deletedCategory = await this.categoryModel
+      .findByIdAndDelete(id)
+      .lean();
+
+    if (!deletedCategory) {
+      throw new BadRequestException('Category does not exist.');
+    }
+
+    return {
+      message: 'Category deleted successfully',
+    };
   }
-
-  return {
-    message: 'Category deleted successfully',
-  };
-}
-
 }

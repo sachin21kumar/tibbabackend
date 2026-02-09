@@ -6,10 +6,10 @@ export type ReservationDocument = Reservation & Document;
 @Schema({ timestamps: true })
 export class Reservation {
   @Prop({ required: true })
-  date: string; // YYYY-MM-DD
+  date: string;
 
   @Prop({ required: true })
-  time: string; // 7:00 PM
+  time: string;
 
   @Prop({ required: true })
   guests: number;

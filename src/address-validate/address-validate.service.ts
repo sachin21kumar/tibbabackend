@@ -23,7 +23,6 @@ export class AddressValidateService {
     let matchedCountry: string | null = null;
     let matchedState: string | null = null;
 
-    // 🔍 Match state first (more precise)
     for (const state of this.states) {
       if (text.includes(state.name.toLowerCase())) {
         matchedState = state.name;
@@ -36,7 +35,6 @@ export class AddressValidateService {
       }
     }
 
-    // 🔍 Match country (if state not found)
     if (!matchedCountry) {
       for (const country of this.countries) {
         if (text.includes(country.name.toLowerCase())) {
@@ -48,7 +46,6 @@ export class AddressValidateService {
 
     const isValid = Boolean(matchedCountry || matchedState);
 
-    // 📝 Save log
     await this.addressValidateModel.create({
       address,
       matchedCountry,

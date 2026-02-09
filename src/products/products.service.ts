@@ -17,7 +17,6 @@ export class ProductService {
     @InjectModel(Product.name)
     private readonly productModel: Model<ProductDocument>,
   ) {
-    // Ensure folders exist
     if (!fs.existsSync('./uploads/csv'))
       fs.mkdirSync('./uploads/csv', { recursive: true });
     if (!fs.existsSync('./uploads/images'))
@@ -26,8 +25,8 @@ export class ProductService {
 
   private async downloadImage(url: string): Promise<string> {
     try {
-      let name = path.basename(url).split('?')[0]; // remove query params
-      name = name.replace(/[^a-zA-Z0-9.\-_]/g, '_'); // sanitize
+      let name = path.basename(url).split('?')[0];
+      name = name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
       const filename = Date.now() + '-' + name;
       const imagePath = path.join('./uploads/images', filename);
 
@@ -44,7 +43,7 @@ export class ProductService {
         writer.on('error', reject);
       });
     } catch {
-      return ''; // fail silently if download fails
+      return '';
     }
   }
 
@@ -75,7 +74,6 @@ export class ProductService {
         })
         .on('end', async () => {
           try {
-            // Download images in parallel
             await Promise.all(
               results.map(async (item) => {
                 if (item.imageUrl) {
@@ -89,7 +87,6 @@ export class ProductService {
 
             const inserted = await this.productModel.insertMany(results);
 
-            // Delete CSV file after processing
             if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
 
             resolve({
@@ -113,49 +110,44 @@ export class ProductService {
     });
   }
 
- async getProducts(
-  categoryId?: string,
-  name?: string,
-  page: number = 1,
-  limit: number = 9,
-  sortBy: 'price' | 'name' = 'price',
-  order: 'asc' | 'desc' = 'asc',
-) {
-  const filter: any = {};
+  async getProducts(
+    categoryId?: string,
+    name?: string,
+    page: number = 1,
+    limit: number = 9,
+    sortBy: 'price' | 'name' = 'price',
+    order: 'asc' | 'desc' = 'asc',
+  ) {
+    const filter: any = {};
 
-  if (categoryId && categoryId !== 'undefined' && categoryId !== 'null') {
-    filter.categoryId = new Types.ObjectId(categoryId);
+    if (categoryId && categoryId !== 'undefined' && categoryId !== 'null') {
+      filter.categoryId = new Types.ObjectId(categoryId);
+    }
+
+    if (name && name.trim() !== '') {
+      filter.name = { $regex: name.trim(), $options: 'i' };
+    }
+
+    const sortOption: any = {};
+
+    const hasFilter = Object.keys(filter).length > 0;
+
+    if (hasFilter || sortBy !== 'price' || order !== 'asc') {
+      sortOption[sortBy] = order === 'asc' ? 1 : -1;
+    } else {
+      sortOption._id = 1;
+    }
+
+    const total = await this.productModel.countDocuments(filter);
+    const products = await this.productModel
+      .find(filter)
+      .sort(sortOption)
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .lean();
+
+    return { data: products, total, page, limit };
   }
-
-  if (name && name.trim() !== '') {
-    filter.name = { $regex: name.trim(), $options: 'i' };
-  }
-
-  // ✅ Default: insertion order (oldest first)
-  const sortOption: any = {};
-
-  // Apply sorting ONLY when filter or explicit sort is used
-  const hasFilter = Object.keys(filter).length > 0;
-
-  if (hasFilter || sortBy !== 'price' || order !== 'asc') {
-    sortOption[sortBy] = order === 'asc' ? 1 : -1;
-  } else {
-    // fallback to insertion order
-    sortOption._id = 1;
-  }
-
-  const total = await this.productModel.countDocuments(filter);
-  const products = await this.productModel
-    .find(filter)
-    .sort(sortOption)
-    .skip((page - 1) * limit)
-    .limit(limit)
-    .lean();
-
-  return { data: products, total, page, limit };
-}
-
-
 
   async getProductById(id: string) {
     if (!Types.ObjectId.isValid(id)) {
@@ -182,7 +174,6 @@ export class ProductService {
     });
   }
 
-  /* ================= DELETE PRODUCT ================= */
   async deleteProduct(id: string) {
     const product = await this.productModel.findByIdAndDelete(id);
 
@@ -202,7 +193,6 @@ export class ProductService {
     const product = await this.productModel.findById(id);
     if (!product) throw new NotFoundException('Product not found');
 
-    // 🔥 Delete old image if new uploaded
     if (image && product.imagePath) {
       const oldPath = path.join('./uploads/products', product.imagePath);
       fs.existsSync(oldPath) && fs.unlinkSync(oldPath);

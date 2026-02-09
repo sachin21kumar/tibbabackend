@@ -17,8 +17,6 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 
-// ------------------ Multer Config ------------------
-
 const productImageStorage = diskStorage({
   destination: './uploads/products',
   filename: (_req, file, callback) => {
@@ -28,23 +26,18 @@ const productImageStorage = diskStorage({
   },
 });
 
-// ------------------ DTO for selecting/updating a location ------------------
-
 class SelectLocationDto {
   @IsString()
   @IsNotEmpty()
   locationId: string;
 }
 
-// ------------------ Controller ------------------
 
 @Controller('locations')
 export class LocationsController {
   constructor(private readonly locationsService: LocationsService) {}
 
-  // ------------------ Existing Endpoints ------------------
 
-  // ✅ CREATE LOCATION WITH IMAGE
   @Post()
   @UseInterceptors(
     FileInterceptor('image', {
@@ -56,7 +49,7 @@ export class LocationsController {
         }
         cb(null, true);
       },
-      limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+      limits: { fileSize: 5 * 1024 * 1024 },
     }),
   )
   create(
@@ -95,14 +88,13 @@ export class LocationsController {
       }
       cb(null, true);
     },
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+    limits: { fileSize: 5 * 1024 * 1024 },
   }),
 )
 async updateImage(@Param('id') id: string, @UploadedFile() image?: any) {
   if (!image) {
     throw new Error('No image file uploaded');
   }
-  // Call the new dedicated service method
   return this.locationsService.updateImage(id, image.filename);
 }
 
@@ -112,21 +104,16 @@ async updateImage(@Param('id') id: string, @UploadedFile() image?: any) {
     return this.locationsService.remove(id);
   }
 
-  // ------------------ Selected Location Endpoints ------------------
-
-  // Select a location for the first time
   @Post('select')
   selectLocation(@Body() dto: SelectLocationDto) {
     return this.locationsService.setSelectedLocation(dto.locationId);
   }
 
-  // Get currently selected location
   @Get('selected')
   getSelectedLocation() {
     return this.locationsService.getSelectedLocation();
   }
 
-  // Update selected location
   @Patch('selected')
   updateSelectedLocation(@Body() dto: SelectLocationDto) {
     return this.locationsService.updateSelectedLocation(dto.locationId);

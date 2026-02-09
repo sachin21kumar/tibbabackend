@@ -10,7 +10,7 @@ import { Order } from './checkout.schema';
 import { CreateOrderDto } from './dto/checkout.dto';
 import { Cart } from 'src/cart/cart.schema';
 import { EmailService } from 'src/email/email.service';
-import { LocationsService } from 'src/locations/locations.service'; // Import to get branch coordinates
+import { LocationsService } from 'src/locations/locations.service';
 import { UpdateOrderStatusDto } from './dto/update.status.dto';
 
 @Injectable()
@@ -20,10 +20,9 @@ export class OrdersService {
     @InjectModel(Cart.name) private readonly cartModel: Model<Cart>,
     private stripeService: StripeService,
     private emailService: EmailService,
-    private locationsService: LocationsService, // Inject LocationsService
+    private locationsService: LocationsService,
   ) {}
 
-  // Helper: calculate distance between two coordinates using Haversine formula
   private getDistanceKm(
     lat1: number,
     lng1: number,
@@ -31,7 +30,7 @@ export class OrdersService {
     lng2: number,
   ) {
     const toRad = (value: number) => (value * Math.PI) / 180;
-    const R = 6371; // Earth radius in km
+    const R = 6371;
     const dLat = toRad(lat2 - lat1);
     const dLng = toRad(lng2 - lng1);
     const a =
@@ -55,7 +54,6 @@ export class OrdersService {
       );
     }
 
-    // ✅ Validate delivery distance if delivery type
     if (dto.deliveryType === 'delivery') {
       if (!dto.addressLatLng) {
         throw new BadRequestException(
@@ -63,7 +61,6 @@ export class OrdersService {
         );
       }
 
-      // Get selected branch location
       const location = await this.locationsService.findOne(dto.locationId);
       if (!location?.location || !location.lat || !location.lng) {
         throw new BadRequestException(
@@ -134,7 +131,6 @@ export class OrdersService {
       throw new NotFoundException('Order not found');
     }
 
-    // ✅ Update ONLY if payment method is stripe
     let updatedOrder: any = data;
 
     if (data.paymentMethod === 'stripe') {
@@ -143,7 +139,6 @@ export class OrdersService {
         .lean();
     }
 
-    // 🧹 Clear cart after successful confirmation
     await this.cartModel.deleteMany({});
 
     if (updatedOrder?.email) {

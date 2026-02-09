@@ -37,7 +37,7 @@ export class ProductController {
   @Get()
   async getProducts(
     @Query('categoryId') categoryId?: string,
-    @Query('name') name?: string, // <-- new filter by name
+    @Query('name') name?: string,
     @Query('page') page: string = '1',
     @Query('limit') limit: string = '9',
     @Query('sortBy') sortBy: 'price' | 'name' = 'price',
@@ -45,7 +45,7 @@ export class ProductController {
   ) {
     return this.productService.getProducts(
       categoryId,
-      name, // <-- pass to service
+      name,
       parseInt(page),
       parseInt(limit),
       sortBy,

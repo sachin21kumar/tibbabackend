@@ -16,7 +16,7 @@ import { AddressValidateModule } from './address-validate/address-validate.modul
   imports: [
      ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env', // 👈 IMPORTANT on Windows
+      envFilePath: '.env',
     }),
     MongooseModule.forRoot('mongodb://127.0.0.1:27017/restaurant_db'),
     CategoryModule,

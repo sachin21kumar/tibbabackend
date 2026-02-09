@@ -22,7 +22,7 @@ export class CreateLocationDto {
 
   @IsString()
   @IsNotEmpty()
-  location: string; // ✅ single string now
+  location: string;
 
   @IsOptional()
   @IsString()

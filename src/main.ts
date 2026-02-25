@@ -9,15 +9,15 @@ async function bootstrap() {
   app.disable('etag');
   app.setGlobalPrefix('api');
   app.enableCors({
-    origin: [
-      'http://localhost:3000',
-      'http://192.168.1.6:3000',
-      'http://50.6.249.155:3000/',
-    ],
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  });
+  origin: true,
+  credentials: true,
+  methods: ['GET','POST','PUT','DELETE','OPTIONS'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'x-locale',
+  ],
+});
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

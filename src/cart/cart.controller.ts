@@ -1,4 +1,13 @@
-import { Body, Controller, Delete, Get, Param, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Query,
+  Headers,
+} from '@nestjs/common';
 import { CartService } from './cart.service';
 import { AddToCartDto } from './dto/cart.dto';
 
@@ -6,11 +15,18 @@ import { AddToCartDto } from './dto/cart.dto';
 export class CartController {
   constructor(private readonly cartService: CartService) {}
 
+  // ⭐ GET CART (NOW LANGUAGE AWARE)
   @Get()
-  getCart(@Query('locationId') locationId: string) {
-    return this.cartService.getCart(locationId);
+  getCart(
+    @Query('locationId') locationId: string,
+    @Query('locale') queryLocale?: string,
+    @Headers('x-locale') headerLocale?: string,
+  ) {
+    const locale = queryLocale || headerLocale || 'en';
+    return this.cartService.getCart(locationId, locale);
   }
 
+  // ADD
   @Post('add')
   addToCart(@Body() addToCartDto: AddToCartDto) {
     return this.cartService.addToCart(
@@ -20,6 +36,7 @@ export class CartController {
     );
   }
 
+  // UPDATE
   @Post('update')
   updateCart(
     @Body('productId') productId: string,
@@ -28,16 +45,19 @@ export class CartController {
     return this.cartService.updateCart(productId, quantity);
   }
 
+  // REMOVE
   @Delete('remove')
   removeFromCart(@Body('productId') productId: string) {
     return this.cartService.removeFromCart(productId);
   }
 
+  // CLEAR
   @Delete('clear')
   clearCart() {
     return this.cartService.clearCart();
   }
 
+  // GET SINGLE ITEM
   @Get(':productId')
   getCartItemByProductId(@Param('productId') productId: string) {
     return this.cartService.getCartItemByProductId(productId);

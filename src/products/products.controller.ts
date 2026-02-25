@@ -10,6 +10,7 @@ import {
   Body,
   Put,
   Delete,
+  Headers,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -19,6 +20,7 @@ import { ProductService } from './products.service';
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
+  // CSV IMPORT
   @Post('upload-csv')
   @UseInterceptors(
     FileInterceptor('file', {
@@ -34,6 +36,7 @@ export class ProductController {
     return this.productService.createProductsFromCsv(file);
   }
 
+  // GET PRODUCTS (NOW LANGUAGE AWARE)
   @Get()
   async getProducts(
     @Query('categoryId') categoryId?: string,
@@ -42,17 +45,23 @@ export class ProductController {
     @Query('limit') limit: string = '9',
     @Query('sortBy') sortBy: 'price' | 'name' = 'price',
     @Query('order') order: 'asc' | 'desc' = 'asc',
+    @Query('locale') queryLocale?: string,
+    @Headers('x-locale') headerLocale?: string,
   ) {
+    const locale = queryLocale || headerLocale || 'en';
+
     return this.productService.getProducts(
+      locale,
       categoryId,
       name,
-      parseInt(page),
-      parseInt(limit),
+      Number(page) || 1,
+      Number(limit) || 9,
       sortBy,
       order,
     );
   }
 
+  // CREATE PRODUCT
   @Post()
   @UseInterceptors(
     FileInterceptor('image', {
@@ -67,11 +76,18 @@ export class ProductController {
     return this.productService.createProduct(body, image);
   }
 
+  // GET SINGLE PRODUCT (LANGUAGE AWARE)
   @Get(':id')
-  async getProduct(@Param('id') id: string) {
-    return this.productService.getProductById(id);
+  async getProduct(
+    @Param('id') id: string,
+    @Query('locale') queryLocale?: string,
+    @Headers('x-locale') headerLocale?: string,
+  ) {
+    const locale = queryLocale || headerLocale || 'en';
+    return this.productService.getProductById(id, locale);
   }
 
+  // UPDATE PRODUCT
   @Put(':id')
   @UseInterceptors(
     FileInterceptor('image', {
@@ -90,6 +106,7 @@ export class ProductController {
     return this.productService.updateProduct(id, body, image);
   }
 
+  // DELETE PRODUCT
   @Delete(':id')
   async deleteProduct(@Param('id') id: string) {
     return this.productService.deleteProduct(id);

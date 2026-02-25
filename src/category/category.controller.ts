@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, Query, Put, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Query,
+  Put,
+  Param,
+  Delete,
+  Headers,
+} from '@nestjs/common';
 import { CategoryService } from './category.service';
 import { CreateCategoryDto } from './category.dto';
 
@@ -6,22 +16,37 @@ import { CreateCategoryDto } from './category.dto';
 export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
 
+  // CREATE CATEGORY
   @Post()
-  async create(@Body() title: CreateCategoryDto) {
-    return this.categoryService.createCategory(title);
+  async create(@Body() dto: CreateCategoryDto) {
+    return this.categoryService.createCategory(dto);
   }
 
+  // GET CATEGORY (NOW LANGUAGE AWARE)
   @Get()
   async getCategory(
     @Query('search') search?: string,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('locale') queryLocale?: string,
+    @Headers('x-locale') headerLocale?: string,
   ) {
-    const pageNumber = page ? parseInt(page.toString(), 10) : 1;
-    const limitNumber = limit ? parseInt(limit.toString(), 20) : 20;
-    return this.categoryService.getCategory(search, pageNumber, limitNumber);
+    // locale priority: query > header > default
+    const locale = queryLocale || headerLocale || 'en';
+
+    // SAFE number parsing
+    const pageNumber = Number(page) > 0 ? Number(page) : 1;
+    const limitNumber = Number(limit) > 0 ? Number(limit) : 20;
+
+    return this.categoryService.getCategory(
+      locale,
+      search,
+      pageNumber,
+      limitNumber,
+    );
   }
 
+  // UPDATE CATEGORY
   @Put(':id')
   async updateCategory(
     @Param('id') id: string,
@@ -30,8 +55,9 @@ export class CategoryController {
     return this.categoryService.updateCategory(body.title, id);
   }
 
-  @Delete(":id")
-  async deleteCategory(@Param('id') id:string){
-return this.categoryService.deleteCategory(id)
+  // DELETE CATEGORY
+  @Delete(':id')
+  async deleteCategory(@Param('id') id: string) {
+    return this.categoryService.deleteCategory(id);
   }
 }

@@ -4,6 +4,7 @@ import { ProductService } from './products.service';
 import { ProductController } from './products.controller';
 import { Product, ProductSchema } from './products.schema';
 import { Category, CategorySchema } from '../category/category.schema';
+import { TranslationModule } from 'src/common/translation/translation.module';
 
 @Module({
   imports: [
@@ -11,6 +12,7 @@ import { Category, CategorySchema } from '../category/category.schema';
       { name: Product.name, schema: ProductSchema },
       { name: Category.name, schema: CategorySchema },
     ]),
+    TranslationModule
   ],
   providers: [ProductService],
   controllers: [ProductController],

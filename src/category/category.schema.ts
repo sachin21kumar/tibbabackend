@@ -1,13 +1,22 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
+
 export type CategoryDocument = Category & Document;
+
 @Schema({ timestamps: true })
 export class Category {
-  @Prop({ required: true })
-  title: string;
 
+  // keep image
   @Prop({ required: false })
   imageUrl: string;
+
+  // ⭐ NEW multilingual field
+  @Prop({
+    type: Object,
+    required: true,
+    default: { en: { title: '' } }
+  })
+  translations: Record<string, { title: string }>;
 }
 
 export const CategorySchema = SchemaFactory.createForClass(Category);

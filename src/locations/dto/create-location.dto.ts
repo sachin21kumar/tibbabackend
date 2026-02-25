@@ -8,6 +8,8 @@ import {
 } from 'class-validator';
 
 export class CreateLocationDto {
+
+  // English name (backend will auto-create Arabic)
   @IsString()
   @IsNotEmpty()
   name: string;
@@ -40,6 +42,7 @@ export class CreateLocationDto {
   @IsString()
   mobileNumber?: string;
 
+  // ⭐ VERY IMPORTANT (fixes multipart/form-data)
   @Type(() => Number)
   @IsNumber()
   lat: number;

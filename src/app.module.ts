@@ -11,6 +11,7 @@ import { ReservationModule } from './reservation/reservation.module';
 import { ReservationHotelModule } from './hotelroom/reservation.module';
 import { LocationsModule } from './locations/locations.module';
 import { AddressValidateModule } from './address-validate/address-validate.module';
+import { TranslationService } from './common/translation/translation.service';
 
 @Module({
   imports: [

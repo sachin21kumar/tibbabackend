@@ -5,17 +5,24 @@ export type LocationDocument = Location & Document;
 
 @Schema({ timestamps: true })
 export class Location {
-  @Prop({ required: true })
-  name: string;
 
-  @Prop()
-  description?: string;
-
-  @Prop({ required: true })
-  area: string;
-
-  @Prop({ required: true })
-  location: string;
+  // ⭐ MULTILINGUAL FIELDS
+  @Prop({
+    type: Object,
+    required: true,
+    default: {
+      en: { name: '', description: '', area: '', location: '' },
+    },
+  })
+  translations: Record<
+    string,
+    {
+      name: string;
+      description?: string;
+      area: string;
+      location: string;
+    }
+  >;
 
   @Prop({ required: true })
   lat: number;
@@ -40,6 +47,9 @@ export class Location {
 
   @Prop({ required: true })
   imagePath: string;
+
+  @Prop({ unique: true, index: true })
+  slug: string;
 }
 
 export const LocationSchema = SchemaFactory.createForClass(Location);

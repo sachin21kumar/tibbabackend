@@ -7,7 +7,7 @@ async function run() {
   const uri = process.env.MONGO_URI as string;
 
   if (!uri) {
-    console.log("❌ MONGO_URI missing in .env");
+    console.log('❌ MONGO_URI missing in .env');
     process.exit(1);
   }
 
@@ -17,10 +17,7 @@ async function run() {
   const db = client.db();
   const locations = db.collection('locations');
 
-  // OLD locations = still using name field
   const docs = await locations.find({ name: { $exists: true } }).toArray();
-
-  console.log('Locations found for migration:', docs.length);
 
   let index = 0;
 
@@ -32,7 +29,6 @@ async function run() {
     const enArea = loc.area || '';
     const enLocation = loc.location || '';
 
-    // copy english into arabic for now
     const translations = {
       en: {
         name: enName,
@@ -53,18 +49,15 @@ async function run() {
       {
         $set: { translations },
         $unset: {
-          name: "",
-          description: "",
-          area: "",
-          location: "",
+          name: '',
+          description: '',
+          area: '',
+          location: '',
         },
       },
     );
-
-    console.log(`[${index}/${docs.length}] Migrated: ${enName}`);
   }
 
-  console.log('✅ LOCATION MIGRATION COMPLETED');
   await client.close();
 }
 

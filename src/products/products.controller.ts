@@ -20,7 +20,6 @@ import { ProductService } from './products.service';
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
-  // CSV IMPORT
   @Post('upload-csv')
   @UseInterceptors(
     FileInterceptor('file', {
@@ -36,7 +35,6 @@ export class ProductController {
     return this.productService.createProductsFromCsv(file);
   }
 
-  // GET PRODUCTS (NOW LANGUAGE AWARE)
   @Get()
   async getProducts(
     @Query('categoryId') categoryId?: string,
@@ -61,7 +59,6 @@ export class ProductController {
     );
   }
 
-  // CREATE PRODUCT
   @Post()
   @UseInterceptors(
     FileInterceptor('image', {
@@ -76,7 +73,6 @@ export class ProductController {
     return this.productService.createProduct(body, image);
   }
 
-  // GET SINGLE PRODUCT (LANGUAGE AWARE)
   @Get(':id')
   async getProduct(
     @Param('id') id: string,
@@ -87,7 +83,6 @@ export class ProductController {
     return this.productService.getProductById(id, locale);
   }
 
-  // UPDATE PRODUCT
   @Put(':id')
   @UseInterceptors(
     FileInterceptor('image', {
@@ -106,7 +101,6 @@ export class ProductController {
     return this.productService.updateProduct(id, body, image);
   }
 
-  // DELETE PRODUCT
   @Delete(':id')
   async deleteProduct(@Param('id') id: string) {
     return this.productService.deleteProduct(id);

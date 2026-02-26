@@ -25,7 +25,6 @@ export class ProductService {
       fs.mkdirSync('./uploads/images', { recursive: true });
   }
 
-  // IMAGE DOWNLOAD
   private async downloadImage(url: string): Promise<string> {
     try {
       let name = path.basename(url).split('?')[0];
@@ -51,7 +50,6 @@ export class ProductService {
     }
   }
 
-  // CSV IMPORT (MULTILINGUAL NOW)
   async createProductsFromCsv(file: any) {
     if (!file) throw new BadRequestException('CSV file is required.');
 
@@ -86,9 +84,10 @@ export class ProductService {
                 item.imagePath = '';
               }
 
-              // 🔥 AUTO TRANSLATE
               const arName = await this.translationService.toArabic(item.name);
-              const arDesc = await this.translationService.toArabic(item.description);
+              const arDesc = await this.translationService.toArabic(
+                item.description,
+              );
 
               item.translations = {
                 en: { name: item.name, description: item.description },
@@ -112,7 +111,9 @@ export class ProductService {
           } catch (err) {
             if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
             reject(
-              new BadRequestException('Failed to save products: ' + err.message),
+              new BadRequestException(
+                'Failed to save products: ' + err.message,
+              ),
             );
           }
         })
@@ -123,108 +124,90 @@ export class ProductService {
     });
   }
 
-  // GET PRODUCTS (LANGUAGE AWARE)
- async getProducts(
-  locale: string = 'en',
-  categoryId?: string,
-  name?: string,
-  page: number = 1,
-  limit: number = 9,
-  sortBy: 'price' | 'name' = 'price',
-  order: 'asc' | 'desc' = 'asc',
-) {
-  const filter: any = {};
+  async getProducts(
+    locale: string = 'en',
+    categoryId?: string,
+    name?: string,
+    page: number = 1,
+    limit: number = 9,
+    sortBy: 'price' | 'name' = 'price',
+    order: 'asc' | 'desc' = 'asc',
+  ) {
+    const filter: any = {};
 
-  // category filter
-  if (categoryId && categoryId !== 'undefined' && categoryId !== 'null') {
-    filter.categoryId = new Types.ObjectId(categoryId);
-  }
-
-  // search filter (search both languages)
-  if (name && typeof name === 'string' && name.trim() !== '') {
-    const regex = { $regex: name.trim(), $options: 'i' };
-    filter.$or = [
-      { 'translations.en.name': regex },
-      { 'translations.ar.name': regex },
-    ];
-  }
-
-  const sortOption: any = {};
-  sortOption[sortBy] = order === 'asc' ? 1 : -1;
-
-  const total = await this.productModel.countDocuments(filter);
-
-  const products = await this.productModel
-    .find(filter)
-    .sort(sortOption)
-    .skip((page - 1) * limit)
-    .limit(limit)
-    .lean();
-
-  // ⭐ AUTO TRANSLATION ENGINE
-  const localized:any = [];
-
-  for (const p of products as any[]) {
-
-    let translation = p.translations?.[locale];
-
-    // If Arabic requested and not translated yet
-    if (
-      locale === 'ar' &&
-      (
-        !translation ||
-        translation.name === p.translations?.en?.name // same as english = not translated
-      )
-    ) {
-      try {
-
-        // translate once
-        const arName = await this.translationService.toArabic(
-          p.translations.en.name,
-        );
-
-        const arDesc = await this.translationService.toArabic(
-          p.translations.en.description || '',
-        );
-
-        // save permanently in database
-        await this.productModel.updateOne(
-          { _id: p._id },
-          {
-            $set: {
-              'translations.ar.name': arName,
-              'translations.ar.description': arDesc,
-            },
-          },
-        );
-
-        translation = { name: arName, description: arDesc };
-
-        console.log('Auto translated product:', arName);
-
-      } catch (err) {
-        // fallback if google fails
-        translation = p.translations.en;
-      }
+    if (categoryId && categoryId !== 'undefined' && categoryId !== 'null') {
+      filter.categoryId = new Types.ObjectId(categoryId);
     }
 
-    // fallback safety
-    if (!translation) translation = p.translations.en;
+    if (name && typeof name === 'string' && name.trim() !== '') {
+      const regex = { $regex: name.trim(), $options: 'i' };
+      filter.$or = [
+        { 'translations.en.name': regex },
+        { 'translations.ar.name': regex },
+      ];
+    }
 
-    localized.push({
-      _id: p._id,
-      name: translation?.name,
-      description: translation?.description,
-      price: p.price,
-      imagePath: p.imagePath,
-      categoryId: p.categoryId,
-    });
+    const sortOption: any = {};
+    sortOption[sortBy] = order === 'asc' ? 1 : -1;
+
+    const total = await this.productModel.countDocuments(filter);
+
+    const products = await this.productModel
+      .find(filter)
+      .sort(sortOption)
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .lean();
+
+    const localized: any = [];
+
+    for (const p of products as any[]) {
+      let translation = p.translations?.[locale];
+
+      if (
+        locale === 'ar' &&
+        (!translation || translation.name === p.translations?.en?.name)
+      ) {
+        try {
+          const arName = await this.translationService.toArabic(
+            p.translations.en.name,
+          );
+
+          const arDesc = await this.translationService.toArabic(
+            p.translations.en.description || '',
+          );
+
+          await this.productModel.updateOne(
+            { _id: p._id },
+            {
+              $set: {
+                'translations.ar.name': arName,
+                'translations.ar.description': arDesc,
+              },
+            },
+          );
+
+          translation = { name: arName, description: arDesc };
+        } catch (err) {
+          translation = p.translations.en;
+        }
+      }
+
+      if (!translation) translation = p.translations.en;
+
+      localized.push({
+        _id: p._id,
+        name: translation?.name,
+        description: translation?.description,
+        price: p.price,
+        imagePath: p.imagePath,
+        categoryId: p.categoryId,
+      });
+    }
+
+    return { data: localized, total, page, limit };
   }
 
-  return { data: localized, total, page, limit };
-}
-
-  // GET SINGLE PRODUCT
   async getProductById(id: string, locale: string = 'en') {
     if (!Types.ObjectId.isValid(id))
       throw new BadRequestException('Invalid product ID');
@@ -244,7 +227,6 @@ export class ProductService {
     };
   }
 
-  // CREATE PRODUCT (MANUAL)
   async createProduct(data: any, image?: any) {
     if (!data.name || !data.price || !data.categoryId) {
       throw new BadRequestException('name, price and categoryId are required');
@@ -267,7 +249,6 @@ export class ProductService {
     });
   }
 
-  // DELETE
   async deleteProduct(id: string) {
     const product = await this.productModel.findByIdAndDelete(id);
     if (!product) throw new NotFoundException('Product not found');
@@ -275,7 +256,6 @@ export class ProductService {
     return { message: 'Product deleted successfully' };
   }
 
-  // UPDATE PRODUCT
   async updateProduct(id: string, body: any, image?: any) {
     if (!Types.ObjectId.isValid(id))
       throw new BadRequestException('Invalid product ID');

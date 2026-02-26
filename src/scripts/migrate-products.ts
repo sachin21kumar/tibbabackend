@@ -10,10 +10,7 @@ async function run() {
   const db = client.db();
   const products = db.collection('products');
 
-  // find old products
   const docs = await products.find({ name: { $exists: true } }).toArray();
-
-  console.log('Products found for migration:', docs.length);
 
   let count = 0;
 
@@ -21,7 +18,6 @@ async function run() {
     const englishName = p.name || '';
     const englishDesc = p.description || '';
 
-    // 👇 IMPORTANT: copy english to arabic for now
     await products.updateOne(
       { _id: p._id },
       {
@@ -38,17 +34,15 @@ async function run() {
           },
         },
         $unset: {
-          name: "",
-          description: "",
+          name: '',
+          description: '',
         },
-      }
+      },
     );
 
     count++;
-    console.log(`[${count}/${docs.length}] Migrated:`, englishName);
   }
 
-  console.log('PRODUCT MIGRATION COMPLETED ✅');
   await client.close();
 }
 

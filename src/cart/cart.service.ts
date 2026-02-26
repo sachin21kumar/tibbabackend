@@ -9,7 +9,6 @@ export class CartService {
     @InjectModel(Cart.name) private readonly cartModel: Model<Cart>,
   ) {}
 
-  // ⭐ GET CART (LOCALE AWARE)
   async getCart(locationId: string, locale: string = 'en') {
     const cart = await this.cartModel
       .findOne({ locationId: new Types.ObjectId(locationId) })
@@ -20,21 +19,17 @@ export class CartService {
       return { items: [], totalPrice: 0 };
     }
 
-    // ---- LOCALIZE PRODUCTS ----
     for (const item of cart.items as any[]) {
       const product = item.productId;
       if (!product) continue;
 
-      // choose translation
       const translation =
         product.translations?.[locale] || product.translations?.en;
 
-      // inject dynamic fields
       product.name = translation?.name || '';
       product.description = translation?.description || '';
     }
 
-    // calculate total
     const totalPrice = cart.items.reduce((total, item: any) => {
       return total + (item.productId?.price || 0) * item.quantity;
     }, 0);
@@ -42,7 +37,6 @@ export class CartService {
     return { ...cart, totalPrice };
   }
 
-  // ADD TO CART
   async addToCart(productId: string, quantity = 1, locationId: string) {
     const productObjectId = new Types.ObjectId(productId);
     const locationObjectId = new Types.ObjectId(locationId);
@@ -71,7 +65,6 @@ export class CartService {
     return cart;
   }
 
-  // UPDATE CART ITEM
   async updateCart(productId: string, quantity: number) {
     const cart = await this.cartModel.findOne();
     if (!cart) return null;
@@ -97,7 +90,6 @@ export class CartService {
     return cart;
   }
 
-  // REMOVE ITEM
   async removeFromCart(productId: string) {
     const cart = await this.cartModel.findOne();
     if (!cart) return null;
@@ -115,12 +107,10 @@ export class CartService {
     return cart;
   }
 
-  // CLEAR CART
   async clearCart() {
     return this.cartModel.findOneAndDelete({});
   }
 
-  // GET SINGLE ITEM
   async getCartItemByProductId(productId: string) {
     return this.cartModel.findOne(
       { 'items.productId': new Types.ObjectId(productId) },

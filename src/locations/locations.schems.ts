@@ -5,8 +5,6 @@ export type LocationDocument = Location & Document;
 
 @Schema({ timestamps: true })
 export class Location {
-
-  // ⭐ MULTILINGUAL FIELDS
   @Prop({
     type: Object,
     required: true,

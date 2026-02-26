@@ -5,7 +5,6 @@ export type ProductDocument = Product & Document;
 
 @Schema({ timestamps: true })
 export class Product {
-
   @Prop({ required: true })
   price: number;
 
@@ -15,7 +14,6 @@ export class Product {
   @Prop({ type: Types.ObjectId, ref: 'Category', required: true })
   categoryId: Types.ObjectId;
 
-  // ⭐ NEW MULTILINGUAL FIELD
   @Prop({
     type: Object,
     required: true,

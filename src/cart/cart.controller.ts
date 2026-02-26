@@ -15,7 +15,6 @@ import { AddToCartDto } from './dto/cart.dto';
 export class CartController {
   constructor(private readonly cartService: CartService) {}
 
-  // ⭐ GET CART (NOW LANGUAGE AWARE)
   @Get()
   getCart(
     @Query('locationId') locationId: string,
@@ -26,7 +25,6 @@ export class CartController {
     return this.cartService.getCart(locationId, locale);
   }
 
-  // ADD
   @Post('add')
   addToCart(@Body() addToCartDto: AddToCartDto) {
     return this.cartService.addToCart(
@@ -36,7 +34,6 @@ export class CartController {
     );
   }
 
-  // UPDATE
   @Post('update')
   updateCart(
     @Body('productId') productId: string,
@@ -45,19 +42,16 @@ export class CartController {
     return this.cartService.updateCart(productId, quantity);
   }
 
-  // REMOVE
   @Delete('remove')
   removeFromCart(@Body('productId') productId: string) {
     return this.cartService.removeFromCart(productId);
   }
 
-  // CLEAR
   @Delete('clear')
   clearCart() {
     return this.cartService.clearCart();
   }
 
-  // GET SINGLE ITEM
   @Get(':productId')
   getCartItemByProductId(@Param('productId') productId: string) {
     return this.cartService.getCartItemByProductId(productId);

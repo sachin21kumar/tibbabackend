@@ -13,7 +13,6 @@ export class CategoryService {
     private readonly translationService: TranslationService,
   ) {}
 
-  // CREATE CATEGORY
   async createCategory(createCategoryDto: CreateCategoryDto) {
     const { title } = createCategoryDto;
 
@@ -23,7 +22,6 @@ export class CategoryService {
 
     const cleanTitle = String(title).trim();
 
-    // duplicate check (english base language)
     const exists = await this.categoryModel.findOne({
       'translations.en.title': cleanTitle,
     });
@@ -32,7 +30,6 @@ export class CategoryService {
       throw new BadRequestException('Category already exists.');
     }
 
-    // auto arabic translation
     const arabicTitle = await this.translationService.toArabic(cleanTitle);
 
     const category = await this.categoryModel.create({
@@ -48,7 +45,6 @@ export class CategoryService {
     };
   }
 
-  // GET CATEGORY (FIXED)
   async getCategory(
     locale: string = 'en',
     search?: any,
@@ -59,12 +55,10 @@ export class CategoryService {
 
     let query: any = {};
 
-    // ---- SAFE SEARCH HANDLING ----
     const searchText =
       typeof search === 'string' ? search.trim() : '';
     if (searchText !== '') {
       const regex = { $regex: searchText, $options: 'i' };
-      // search in BOTH languages (important)
       query = {
         $or: [
           { 'translations.en.title': regex },
@@ -78,17 +72,15 @@ export class CategoryService {
       .skip(skip)
       .limit(limit)
       .lean();
-    // ---- LANGUAGE FALLBACK RESOLVER ----
+
     const result = categories.map((cat: any) => {
       let title = '';
       if (locale === 'ar') {
-        // arabic user
         title =
           cat.translations?.ar?.title ||
           cat.translations?.en?.title ||
           'No Title';
       } else {
-        // english user
         title =
           cat.translations?.en?.title ||
           cat.translations?.ar?.title ||
@@ -104,7 +96,6 @@ export class CategoryService {
     return { data: result, page, limit };
   }
 
-  // UPDATE CATEGORY
   async updateCategory(title: string, id: string) {
     if (!title) {
       throw new BadRequestException('Title is required');
@@ -112,7 +103,6 @@ export class CategoryService {
 
     const cleanTitle = String(title).trim();
 
-    // retranslate
     const arabicTitle = await this.translationService.toArabic(cleanTitle);
 
     const updatedCategory = await this.categoryModel
@@ -138,7 +128,6 @@ export class CategoryService {
     };
   }
 
-  // DELETE CATEGORY
   async deleteCategory(id: string) {
     const deletedCategory = await this.categoryModel
       .findByIdAndDelete(id)

@@ -3,6 +3,6 @@ import { TranslationService } from './translation.service';
 
 @Module({
   providers: [TranslationService],
-  exports: [TranslationService], // ⭐ VERY IMPORTANT
+  exports: [TranslationService],
 })
 export class TranslationModule {}

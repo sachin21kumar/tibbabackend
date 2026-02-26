@@ -15,13 +15,9 @@ export class LocationsService {
     private readonly translationService: TranslationService,
   ) {}
 
-  /* ---------------------------------------------------- */
-  /* ⭐ AUTO FIX OLD LOCATIONS (IMPORTANT)                 */
-  /* ---------------------------------------------------- */
   private async ensureArabicTranslation(loc: any) {
     if (!loc?.translations?.en) return loc;
 
-    // if arabic already exists and is different → OK
     if (
       loc.translations?.ar?.name &&
       loc.translations.ar.name !== loc.translations.en.name
@@ -30,8 +26,6 @@ export class LocationsService {
     }
 
     const en = loc.translations.en;
-
-    console.log('Auto translating location →', en.name);
 
     const arName = await this.translationService.toArabic(en.name || '');
     const arDesc = await this.translationService.toArabic(en.description || '');
@@ -62,7 +56,6 @@ export class LocationsService {
     return loc;
   }
 
-  // CREATE LOCATION (AUTO TRANSLATE)
   async create(dto: CreateLocationDto & { imagePath?: any }) {
     const baseSlug = slugify(dto.area || dto.name, {
       lower: true,
@@ -113,9 +106,7 @@ export class LocationsService {
     });
   }
 
-  // FIND ALL (NOW AUTO-MIGRATES + LOCALE AWARE)
   async findAll(locale: string = 'en') {
-    // 👇 the order you want to show in frontend
     const customOrder = [
       'Al Qusais',
       'Business Bay',
@@ -124,15 +115,11 @@ export class LocationsService {
       'Abu Hail',
     ];
 
-    // 🔥 MongoDB custom sorting
     const locations = await this.locationModel.aggregate([
       {
         $addFields: {
           sortOrder: {
-            $indexOfArray: [
-              customOrder,
-              `$translations.en.area`, // always sort using english key
-            ],
+            $indexOfArray: [customOrder, `$translations.en.area`],
           },
         },
       },
@@ -144,7 +131,6 @@ export class LocationsService {
     const result: any = [];
 
     for (let loc of locations as any[]) {
-      // ⭐ keep your auto arabic generation
       if (locale === 'ar') {
         loc = await this.ensureArabicTranslation(loc);
       }
@@ -163,7 +149,6 @@ export class LocationsService {
     return result;
   }
 
-  // FIND ONE
   async findOne(id: string, locale: string = 'en') {
     let location: any = await this.locationModel.findById(id).lean();
     if (!location) throw new NotFoundException('Location not found');
@@ -183,7 +168,6 @@ export class LocationsService {
     };
   }
 
-  // FIND BY SLUG
   async findBySlug(slug: string, locale: string = 'en') {
     let location: any = await this.locationModel.findOne({ slug }).lean();
     if (!location) throw new NotFoundException('Location not found');
@@ -203,7 +187,6 @@ export class LocationsService {
     };
   }
 
-  // UPDATE (AUTO RE-TRANSLATE)
   async update(id: string, dto: UpdateLocationDto) {
     const location: any = await this.locationModel.findById(id);
     if (!location) throw new NotFoundException('Location not found');
@@ -247,7 +230,6 @@ export class LocationsService {
     return location;
   }
 
-  // REMOVE
   async remove(id: string) {
     const deleted = await this.locationModel.findByIdAndDelete(id).lean();
     if (!deleted) throw new NotFoundException('Location not found');

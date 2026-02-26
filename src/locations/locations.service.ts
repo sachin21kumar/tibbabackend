@@ -36,7 +36,9 @@ export class LocationsService {
     const arName = await this.translationService.toArabic(en.name || '');
     const arDesc = await this.translationService.toArabic(en.description || '');
     const arArea = await this.translationService.toArabic(en.area || '');
-    const arLocation = await this.translationService.toArabic(en.location || '');
+    const arLocation = await this.translationService.toArabic(
+      en.location || '',
+    );
 
     await this.locationModel.updateOne(
       { _id: loc._id },
@@ -113,16 +115,36 @@ export class LocationsService {
 
   // FIND ALL (NOW AUTO-MIGRATES + LOCALE AWARE)
   async findAll(locale: string = 'en') {
-    const locations = await this.locationModel
-      .find()
-      .sort({ createdAt: -1 })
-      .lean();
+    // 👇 the order you want to show in frontend
+    const customOrder = [
+      'Al Qusais',
+      'Business Bay',
+      'Al Aweer',
+      'Deira',
+      'Abu Hail',
+    ];
 
-    const result:any = [];
+    // 🔥 MongoDB custom sorting
+    const locations = await this.locationModel.aggregate([
+      {
+        $addFields: {
+          sortOrder: {
+            $indexOfArray: [
+              customOrder,
+              `$translations.en.area`, // always sort using english key
+            ],
+          },
+        },
+      },
+      {
+        $sort: { sortOrder: 1 },
+      },
+    ]);
+
+    const result: any = [];
 
     for (let loc of locations as any[]) {
-
-      // ⭐ automatically generate Arabic if missing
+      // ⭐ keep your auto arabic generation
       if (locale === 'ar') {
         loc = await this.ensureArabicTranslation(loc);
       }
@@ -188,22 +210,28 @@ export class LocationsService {
 
     if (dto.name) {
       location.translations.en.name = dto.name;
-      location.translations.ar.name = await this.translationService.toArabic(dto.name);
+      location.translations.ar.name = await this.translationService.toArabic(
+        dto.name,
+      );
     }
 
     if (dto.description !== undefined) {
       location.translations.en.description = dto.description || '';
-      location.translations.ar.description = await this.translationService.toArabic(dto.description || '');
+      location.translations.ar.description =
+        await this.translationService.toArabic(dto.description || '');
     }
 
     if (dto.area) {
       location.translations.en.area = dto.area;
-      location.translations.ar.area = await this.translationService.toArabic(dto.area);
+      location.translations.ar.area = await this.translationService.toArabic(
+        dto.area,
+      );
     }
 
     if (dto.location) {
       location.translations.en.location = dto.location;
-      location.translations.ar.location = await this.translationService.toArabic(dto.location);
+      location.translations.ar.location =
+        await this.translationService.toArabic(dto.location);
     }
 
     Object.assign(location, {

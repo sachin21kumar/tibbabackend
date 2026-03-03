@@ -55,8 +55,8 @@ export class CategoryService {
 
     let query: any = {};
 
-    const searchText =
-      typeof search === 'string' ? search.trim() : '';
+    const searchText = typeof search === 'string' ? search.trim() : '';
+
     if (searchText !== '') {
       const regex = { $regex: searchText, $options: 'i' };
       query = {
@@ -73,8 +73,43 @@ export class CategoryService {
       .limit(limit)
       .lean();
 
+    // =====================================
+    // Move Popular Meals directly AFTER Seafood
+    // =====================================
+
+    const getNormalizedTitle = (cat: any) =>
+      (cat.translations?.en?.title || cat.translations?.ar?.title || '')
+        .toLowerCase()
+        .trim();
+
+    const seafoodIndex = categories.findIndex((cat: any) => {
+      const title = getNormalizedTitle(cat);
+      return title === 'seafood' || title === 'المأكولات البحرية';
+    });
+
+    const popularIndex = categories.findIndex((cat: any) => {
+      const title = getNormalizedTitle(cat);
+      return title === 'popular meals' || title === 'الوجبات الشعبية';
+    });
+
+    // Only modify if both exist
+    if (seafoodIndex !== -1 && popularIndex !== -1) {
+      const popularCategory = categories.splice(popularIndex, 1)[0];
+
+      // If Popular was before Seafood, Seafood index shifts -1
+      const adjustedSeafoodIndex =
+        popularIndex < seafoodIndex ? seafoodIndex - 1 : seafoodIndex;
+
+      categories.splice(adjustedSeafoodIndex + 1, 0, popularCategory);
+    }
+
+    // =====================================
+    // Map response
+    // =====================================
+
     const result = categories.map((cat: any) => {
       let title = '';
+
       if (locale === 'ar') {
         title =
           cat.translations?.ar?.title ||
@@ -93,7 +128,12 @@ export class CategoryService {
         title,
       };
     });
-    return { data: result, page, limit };
+
+    return {
+      data: result,
+      page,
+      limit,
+    };
   }
 
   async updateCategory(title: string, id: string) {

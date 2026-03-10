@@ -32,7 +32,7 @@ export class CategoryController {
     const locale = queryLocale || headerLocale || 'en';
 
     const pageNumber = Number(page) > 0 ? Number(page) : 1;
-    const limitNumber = Number(limit) > 0 ? Number(limit) : 20;
+    const limitNumber = Number(limit) > 0 ? Number(limit) : 100;
 
     return this.categoryService.getCategory(
       locale,

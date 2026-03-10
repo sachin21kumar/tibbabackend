@@ -14,11 +14,15 @@ export class Product {
   @Prop({ type: Types.ObjectId, ref: 'Category', required: true })
   categoryId: Types.ObjectId;
 
+  @Prop({ type: Types.ObjectId, ref: 'SubCategory' })
+  subCategoryId?: Types.ObjectId;
+
   @Prop({
     type: Object,
     required: true,
     default: {
       en: { name: '', description: '' },
+      ar: { name: '', description: '' },
     },
   })
   translations: Record<
@@ -28,6 +32,48 @@ export class Product {
       description: string;
     }
   >;
+
+  @Prop()
+  foodType?: string;
+
+  @Prop({ default: 'food' })
+  taxProductGroup?: string;
+
+  @Prop()
+  kitchenDept?: string;
+
+  @Prop({ default: 0 })
+  stock?: number;
+
+  @Prop({ default: 0 })
+  preparationTime?: number;
+
+  @Prop({ default: 1 })
+  isActive?: number;
+
+  @Prop({ default: 0 })
+  itemType?: number;
+
+  @Prop({ default: 1 })
+  platformStatus?: number;
+
+  @Prop({ default: 0 })
+  syncToAggregator?: number;
+
+  @Prop()
+  salePrice1?: number;
+
+  @Prop()
+  salePrice2?: number;
+
+  @Prop()
+  salePrice3?: number;
+
+  @Prop()
+  salePrice4?: number;
+
+  @Prop()
+  salePrice5?: number;
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);

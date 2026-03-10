@@ -6,10 +6,10 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Product, ProductDocument } from './products.schema';
-import { TranslationService } from '../common/translation/translation.service';
 import * as fs from 'fs';
 import * as path from 'path';
 import csv from 'csv-parser';
+import * as XLSX from 'xlsx';
 import axios from 'axios';
 
 @Injectable()
@@ -17,22 +17,24 @@ export class ProductService {
   constructor(
     @InjectModel(Product.name)
     private readonly productModel: Model<ProductDocument>,
-    private readonly translationService: TranslationService,
   ) {
     if (!fs.existsSync('./uploads/csv'))
       fs.mkdirSync('./uploads/csv', { recursive: true });
-    if (!fs.existsSync('./uploads/images'))
-      fs.mkdirSync('./uploads/images', { recursive: true });
+
+    if (!fs.existsSync('./uploads/products'))
+      fs.mkdirSync('./uploads/products', { recursive: true });
   }
 
   private async downloadImage(url: string): Promise<string> {
     try {
       let name = path.basename(url).split('?')[0];
       name = name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+
       const filename = Date.now() + '-' + name;
-      const imagePath = path.join('./uploads/images', filename);
+      const imagePath = path.join('./uploads/products', filename);
 
       const writer = fs.createWriteStream(imagePath);
+
       const response = await axios({
         url,
         method: 'GET',
@@ -49,79 +51,126 @@ export class ProductService {
       return '';
     }
   }
+  ensureUploadFolders() {
+    const csvPath = './uploads/csv';
+    const imagePath = './uploads/products';
 
-  async createProductsFromCsv(file: any) {
-    if (!file) throw new BadRequestException('CSV file is required.');
+    if (!fs.existsSync(csvPath)) {
+      fs.mkdirSync(csvPath, { recursive: true });
+    }
 
-    const results: any[] = [];
+    if (!fs.existsSync(imagePath)) {
+      fs.mkdirSync(imagePath, { recursive: true });
+    }
+  }
+  async importProducts(file: any) {
+    this.ensureUploadFolders();
+    if (!file) throw new BadRequestException('File is required');
 
-    return new Promise((resolve, reject) => {
-      fs.createReadStream(file.path)
-        .pipe(csv())
-        .on('data', (data) => {
-          if (!data.name || !data.price || !data.categoryId) {
-            return reject(
-              new BadRequestException(
-                'Missing name, price, or categoryId in CSV.',
-              ),
-            );
-          }
+    const ext = path.extname(file.originalname).toLowerCase();
 
-          results.push({
-            price: parseFloat(data.price),
-            categoryId: new Types.ObjectId(data.categoryId.trim()),
-            imageUrl: data.imageUrl?.trim() || '',
-            name: data.name.trim(),
-            description: data.description?.trim() || '',
-          });
-        })
-        .on('end', async () => {
-          try {
-            for (const item of results) {
-              if (item.imageUrl) {
-                item.imagePath = await this.downloadImage(item.imageUrl);
-              } else {
-                item.imagePath = '';
-              }
+    let rows: any[] = [];
 
-              const arName = await this.translationService.toArabic(item.name);
-              const arDesc = await this.translationService.toArabic(
-                item.description,
-              );
+    if (ext === '.csv') {
+      rows = await new Promise((resolve, reject) => {
+        const results: any[] = [];
 
-              item.translations = {
-                en: { name: item.name, description: item.description },
-                ar: { name: arName, description: arDesc },
-              };
+        fs.createReadStream(file.path)
+          .pipe(csv())
+          .on('data', (data) => results.push(data))
+          .on('end', () => resolve(results))
+          .on('error', reject);
+      });
+    } else if (ext === '.xlsx' || ext === '.xls') {
+      const workbook = XLSX.readFile(file.path);
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      rows = XLSX.utils.sheet_to_json(sheet);
+    } else {
+      throw new BadRequestException('Unsupported file format');
+    }
 
-              delete item.name;
-              delete item.description;
-              delete item.imageUrl;
-            }
+    const products: any[] = [];
 
-            const inserted = await this.productModel.insertMany(results);
+    for (const row of rows) {
+      const name = String(row.name || '').trim();
+      const price = row.price !== undefined ? Number(row.price) : undefined;
+      const categoryId = String(row.categoryId || '').trim();
+      const subCategoryId = row.subCategoryId
+        ? String(row.subCategoryId).trim()
+        : null;
 
-            if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+      if (!name || price === undefined || !categoryId) {
+        throw new BadRequestException(
+          'name, price and categoryId are required in file',
+        );
+      }
 
-            resolve({
-              message: 'Products created',
-              count: inserted.length,
-              data: inserted,
-            });
-          } catch (err) {
-            if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
-            reject(
-              new BadRequestException(
-                'Failed to save products: ' + err.message,
-              ),
-            );
-          }
-        })
-        .on('error', (err) => {
-          if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
-          reject(new BadRequestException(err.message));
-        });
-    });
+      if (!Types.ObjectId.isValid(categoryId)) {
+        throw new BadRequestException(`Invalid categoryId: ${categoryId}`);
+      }
+
+      let mongoSubCategoryId: any = undefined;
+
+      if (subCategoryId && Types.ObjectId.isValid(subCategoryId)) {
+        mongoSubCategoryId = new Types.ObjectId(subCategoryId);
+      }
+
+      let imagePath = '';
+
+      if (row.imageUrl) {
+        imagePath = await this.downloadImage(String(row.imageUrl).trim());
+      }
+
+      products.push({
+        price,
+
+        categoryId: new Types.ObjectId(categoryId),
+
+        subCategoryId: mongoSubCategoryId,
+
+        imagePath,
+
+        foodType: row.foodType,
+        taxProductGroup: row.taxProductGroup || 'food',
+        kitchenDept: row.kitchenDept,
+
+        stock: row.stock ? Number(row.stock) : 0,
+
+        preparationTime: row.preparationTime ? Number(row.preparationTime) : 0,
+
+        isActive: row.isActive ?? 1,
+        itemType: row.itemType ?? 0,
+        platformStatus: row.platformStatus ?? 1,
+        syncToAggregator: row.syncToAggregator ?? 0,
+
+        salePrice1: row.salePrice1 ?? 0,
+        salePrice2: row.salePrice2 ?? 0,
+        salePrice3: row.salePrice3 ?? 0,
+        salePrice4: row.salePrice4 ?? 0,
+        salePrice5: row.salePrice5 ?? 0,
+
+        translations: {
+          en: {
+            name,
+            description: row.description ? String(row.description) : '',
+          },
+          ar: {
+            name: row.nameAr ? String(row.nameAr) : '',
+            description: row.descriptionAr ? String(row.descriptionAr) : '',
+          },
+        },
+      });
+    }
+
+    const inserted = await this.productModel.insertMany(products);
+
+    if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+
+    return {
+      message: 'Products imported successfully',
+      count: inserted.length,
+      data: inserted,
+    };
   }
 
   async getProducts(
@@ -135,12 +184,13 @@ export class ProductService {
   ) {
     const filter: any = {};
 
-    if (categoryId && categoryId !== 'undefined' && categoryId !== 'null') {
+    if (categoryId && Types.ObjectId.isValid(categoryId)) {
       filter.categoryId = new Types.ObjectId(categoryId);
     }
 
-    if (name && typeof name === 'string' && name.trim() !== '') {
+    if (name && name.trim() !== '') {
       const regex = { $regex: name.trim(), $options: 'i' };
+
       filter.$or = [
         { 'translations.en.name': regex },
         { 'translations.ar.name': regex },
@@ -159,41 +209,14 @@ export class ProductService {
       .limit(limit)
       .lean();
 
-    const localized: any = [];
+    const localized: any[] = [];
 
     for (const p of products as any[]) {
       let translation = p.translations?.[locale];
 
-      if (
-        locale === 'ar' &&
-        (!translation || translation.name === p.translations?.en?.name)
-      ) {
-        try {
-          const arName = await this.translationService.toArabic(
-            p.translations.en.name,
-          );
-
-          const arDesc = await this.translationService.toArabic(
-            p.translations.en.description || '',
-          );
-
-          await this.productModel.updateOne(
-            { _id: p._id },
-            {
-              $set: {
-                'translations.ar.name': arName,
-                'translations.ar.description': arDesc,
-              },
-            },
-          );
-
-          translation = { name: arName, description: arDesc };
-        } catch (err) {
-          translation = p.translations.en;
-        }
+      if (!translation || !translation.name) {
+        translation = p.translations?.en;
       }
-
-      if (!translation) translation = p.translations.en;
 
       localized.push({
         _id: p._id,
@@ -213,9 +236,14 @@ export class ProductService {
       throw new BadRequestException('Invalid product ID');
 
     const product: any = await this.productModel.findById(id).lean();
+
     if (!product) throw new NotFoundException('Product not found');
 
-    const t = product.translations?.[locale] || product.translations?.en;
+    let t = product.translations?.[locale];
+
+    if (!t || !t.name) {
+      t = product.translations?.en;
+    }
 
     return {
       _id: product._id,
@@ -228,29 +256,60 @@ export class ProductService {
   }
 
   async createProduct(data: any, image?: any) {
-    if (!data.name || !data.price || !data.categoryId) {
+    if (!data.name || data.price === undefined || !data.categoryId) {
       throw new BadRequestException('name, price and categoryId are required');
     }
 
-    const cleanName = data.name.trim();
-    const cleanDesc = data.description?.trim() || '';
-
-    const arName = await this.translationService.toArabic(cleanName);
-    const arDesc = await this.translationService.toArabic(cleanDesc);
+    if (!Types.ObjectId.isValid(data.categoryId)) {
+      throw new BadRequestException('Invalid categoryId');
+    }
 
     return this.productModel.create({
-      price: parseFloat(data.price),
+      price: Number(data.price),
+
       categoryId: new Types.ObjectId(data.categoryId),
+
+      subCategoryId:
+        data.subCategoryId && Types.ObjectId.isValid(data.subCategoryId)
+          ? new Types.ObjectId(data.subCategoryId)
+          : undefined,
+
       imagePath: image ? image.filename : '',
+
+      foodType: data.foodType,
+      taxProductGroup: data.taxProductGroup || 'food',
+      kitchenDept: data.kitchenDept,
+      stock: data.stock ? Number(data.stock) : 0,
+
+      preparationTime: data.preparationTime ? Number(data.preparationTime) : 0,
+
+      isActive: data.isActive ?? 1,
+      itemType: data.itemType ?? 0,
+      platformStatus: data.platformStatus ?? 1,
+      syncToAggregator: data.syncToAggregator ?? 0,
+
+      salePrice1: data.salePrice1 ?? 0,
+      salePrice2: data.salePrice2 ?? 0,
+      salePrice3: data.salePrice3 ?? 0,
+      salePrice4: data.salePrice4 ?? 0,
+      salePrice5: data.salePrice5 ?? 0,
+
       translations: {
-        en: { name: cleanName, description: cleanDesc },
-        ar: { name: arName, description: arDesc },
+        en: {
+          name: data.name.trim(),
+          description: data.description?.trim() || '',
+        },
+        ar: {
+          name: data.nameAr?.trim() || '',
+          description: data.descriptionAr?.trim() || '',
+        },
       },
     });
   }
 
   async deleteProduct(id: string) {
     const product = await this.productModel.findByIdAndDelete(id);
+
     if (!product) throw new NotFoundException('Product not found');
 
     return { message: 'Product deleted successfully' };
@@ -261,31 +320,70 @@ export class ProductService {
       throw new BadRequestException('Invalid product ID');
 
     const product: any = await this.productModel.findById(id);
+
     if (!product) throw new NotFoundException('Product not found');
 
-    if (image && product.imagePath) {
-      const oldPath = path.join('./uploads/images', product.imagePath);
-      fs.existsSync(oldPath) && fs.unlinkSync(oldPath);
+    if (image) {
       product.imagePath = image.filename;
     }
 
-    if (body.name) {
-      const cleanName = body.name.trim();
-      const arName = await this.translationService.toArabic(cleanName);
-      product.translations.en.name = cleanName;
-      product.translations.ar.name = arName;
-    }
+    if (body.name !== undefined)
+      product.translations.en.name = body.name.trim();
 
-    if (body.description) {
-      const cleanDesc = body.description.trim();
-      const arDesc = await this.translationService.toArabic(cleanDesc);
-      product.translations.en.description = cleanDesc;
-      product.translations.ar.description = arDesc;
-    }
+    if (body.nameAr !== undefined)
+      product.translations.ar.name = body.nameAr.trim();
 
-    if (body.price) product.price = parseFloat(body.price);
-    if (body.categoryId)
+    if (body.description !== undefined)
+      product.translations.en.description = body.description.trim();
+
+    if (body.descriptionAr !== undefined)
+      product.translations.ar.description = body.descriptionAr.trim();
+
+    if (body.price !== undefined) product.price = Number(body.price);
+
+    if (
+      body.categoryId !== undefined &&
+      Types.ObjectId.isValid(body.categoryId)
+    )
       product.categoryId = new Types.ObjectId(body.categoryId);
+
+    if (
+      body.subCategoryId !== undefined &&
+      Types.ObjectId.isValid(body.subCategoryId)
+    )
+      product.subCategoryId = new Types.ObjectId(body.subCategoryId);
+
+    if (body.foodType !== undefined) product.foodType = body.foodType;
+
+    if (body.taxProductGroup !== undefined)
+      product.taxProductGroup = body.taxProductGroup;
+
+    if (body.kitchenDept !== undefined) product.kitchenDept = body.kitchenDept;
+
+    if (body.stock !== undefined) product.stock = Number(body.stock);
+
+    if (body.preparationTime !== undefined)
+      product.preparationTime = Number(body.preparationTime);
+
+    if (body.isActive !== undefined) product.isActive = body.isActive;
+
+    if (body.itemType !== undefined) product.itemType = body.itemType;
+
+    if (body.platformStatus !== undefined)
+      product.platformStatus = body.platformStatus;
+
+    if (body.syncToAggregator !== undefined)
+      product.syncToAggregator = body.syncToAggregator;
+
+    if (body.salePrice1 !== undefined) product.salePrice1 = body.salePrice1;
+
+    if (body.salePrice2 !== undefined) product.salePrice2 = body.salePrice2;
+
+    if (body.salePrice3 !== undefined) product.salePrice3 = body.salePrice3;
+
+    if (body.salePrice4 !== undefined) product.salePrice4 = body.salePrice4;
+
+    if (body.salePrice5 !== undefined) product.salePrice5 = body.salePrice5;
 
     await product.save();
 

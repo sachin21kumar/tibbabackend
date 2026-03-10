@@ -220,8 +220,8 @@ export class LocationsService {
     Object.assign(location, {
       operation_hours: dto.operation_hours,
       branchEmail: dto.branchEmail,
-      telephone: dto.telephone,
-      mobileNumber: dto.mobileNumber,
+      telephone: dto.telephone || location.telephone,
+      mobileNumber: dto.mobileNumber || location.mobileNumber,
       lat: dto.lat ?? location.lat,
       lng: dto.lng ?? location.lng,
     });

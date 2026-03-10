@@ -14,25 +14,50 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
+import { extname } from 'path';
 import { ProductService } from './products.service';
-
+import { CreateProductDto } from './products.dto';
+import * as fs from 'fs'
 @Controller('product')
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
-  @Post('upload-csv')
+  @Post('upload-file')
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
-        destination: './uploads/csv',
-        filename: (req, file, cb) =>
-          cb(null, Date.now() + '-' + file.originalname),
+        destination: (req, file, cb) => {
+          const dir = './uploads/csv';
+
+          if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+          }
+
+          cb(null, dir);
+        },
+        filename: (req, file, cb) => {
+          cb(null, Date.now() + '-' + file.originalname);
+        },
       }),
+      fileFilter: (req, file, cb) => {
+        const allowed = ['.csv', '.xlsx', '.xls'];
+        const ext = extname(file.originalname).toLowerCase();
+
+        if (!allowed.includes(ext)) {
+          return cb(
+            new BadRequestException('Only CSV, XLSX, or XLS files are allowed'),
+            false,
+          );
+        }
+
+        cb(null, true);
+      },
     }),
   )
-  async uploadCsv(@UploadedFile() file: any) {
-    if (!file) throw new BadRequestException('CSV file is required.');
-    return this.productService.createProductsFromCsv(file);
+  async uploadFile(@UploadedFile() file: any) {
+    if (!file) throw new BadRequestException('File is required');
+
+    return this.productService.importProducts(file);
   }
 
   @Get()
@@ -69,9 +94,13 @@ export class ProductController {
       }),
     }),
   )
-  async createProduct(@Body() body: any, @UploadedFile() image?: any) {
+  async createProduct(
+    @Body() body: CreateProductDto,
+    @UploadedFile() image?: any,
+  ) {
     return this.productService.createProduct(body, image);
   }
+  l;
 
   @Get(':id')
   async getProduct(
@@ -80,6 +109,7 @@ export class ProductController {
     @Headers('x-locale') headerLocale?: string,
   ) {
     const locale = queryLocale || headerLocale || 'en';
+
     return this.productService.getProductById(id, locale);
   }
 

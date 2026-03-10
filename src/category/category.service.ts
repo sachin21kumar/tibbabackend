@@ -80,7 +80,11 @@ export class CategoryService {
 
     const seafoodIndex = categories.findIndex((cat: any) => {
       const title = getNormalizedTitle(cat);
-      return title === 'sea food' || title === 'المأكولات البحرية';
+      return (
+        title === 'sea food' ||
+        title === 'المأكولات البحرية' ||
+        title === 'seafood'
+      );
     });
 
     const popularIndex = categories.findIndex((cat: any) => {

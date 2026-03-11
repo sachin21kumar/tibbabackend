@@ -224,6 +224,9 @@ export class LocationsService {
       mobileNumber: dto.mobileNumber || location.mobileNumber,
       lat: dto.lat ?? location.lat,
       lng: dto.lng ?? location.lng,
+      slug: dto.slug
+        ? slugify(dto.slug, { lower: true, strict: true, trim: true })
+        : location.slug,
     });
 
     await location.save();

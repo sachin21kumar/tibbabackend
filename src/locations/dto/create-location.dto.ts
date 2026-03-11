@@ -51,4 +51,8 @@ export class CreateLocationDto {
   @IsOptional()
   @IsString()
   imagePath?: string;
+
+  @IsOptional()
+  @IsString()
+  slug?: string;
 }

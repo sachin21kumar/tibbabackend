@@ -16,7 +16,13 @@ export class CartService {
       .lean();
 
     if (!cart) {
-      return { items: [], totalPrice: 0 };
+      return {
+        items: [],
+        subtotal: 0,
+        deliveryFee: 0,
+        totalPrice: 0,
+        couponCode: 'TIBBA25',
+      };
     }
 
     for (const item of cart.items as any[]) {
@@ -30,11 +36,25 @@ export class CartService {
       product.description = translation?.description || '';
     }
 
-    const totalPrice = cart.items.reduce((total, item: any) => {
+    const subtotal = cart.items.reduce((total, item: any) => {
       return total + (item.productId?.price || 0) * item.quantity;
     }, 0);
 
-    return { ...cart, totalPrice };
+    let deliveryFee = 0;
+
+    if (subtotal < 100) {
+      deliveryFee = 3;
+    }
+
+    const totalPrice = subtotal + deliveryFee;
+
+    return {
+      ...cart,
+      subtotal,
+      deliveryFee,
+      totalPrice,
+      couponCode: 'TIBBA25',
+    };
   }
 
   async addToCart(productId: string, quantity = 1, locationId: string) {

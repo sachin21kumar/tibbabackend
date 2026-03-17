@@ -16,6 +16,9 @@ export class Cart {
 
   @Prop({ required: true, type: Types.ObjectId, ref: 'Locations' })
   locationId: Types.ObjectId;
+
+  @Prop({ default: '' })
+  specialInstructions: string;
 }
 
 export const CartSchema = SchemaFactory.createForClass(Cart);

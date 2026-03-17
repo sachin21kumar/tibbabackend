@@ -9,11 +9,8 @@ export class Order {
   @Prop({ required: true })
   fullName: string;
 
-  
   @Prop({ required: true })
   address: string;
-
-  
 
   @Prop({ required: true })
   phone: string;
@@ -44,7 +41,17 @@ export class Order {
   @Prop({ required: true })
   total: number;
 
-  @Prop({ default: 'New', enum: ['New', 'Accepted', 'Preparing', 'Out for Delivery', 'Delivered', 'Cancelled'] })
+  @Prop({
+    default: 'New',
+    enum: [
+      'New',
+      'Accepted',
+      'Preparing',
+      'Out for Delivery',
+      'Delivered',
+      'Cancelled',
+    ],
+  })
   OrderStatus: string;
 
   @Prop({ default: 'pending' })
@@ -76,6 +83,9 @@ export class Order {
 
   @Prop()
   paymentMethod?: string;
+
+  @Prop({ default: '' })
+  specialInstructions: string;
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);

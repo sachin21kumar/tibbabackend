@@ -18,7 +18,9 @@ export class CartService {
     if (!cart) {
       return {
         items: [],
+        specialInstructions: '',
         subtotal: 0,
+        discount: 0,
         deliveryFee: 0,
         totalPrice: 0,
         couponCode: 'TIBBA25',
@@ -41,16 +43,18 @@ export class CartService {
     }, 0);
 
     let deliveryFee = 0;
-
     if (subtotal < 100) {
       deliveryFee = 3;
     }
 
-    const totalPrice = subtotal + deliveryFee;
-
+    const discount = subtotal * 0.25;
+    const totalPrice = subtotal - discount + deliveryFee;
+    console.log('Cart details:', cart.specialInstructions);
     return {
       ...cart,
+      specialInstructions: cart.specialInstructions || '',
       subtotal,
+      discount,
       deliveryFee,
       totalPrice,
       couponCode: 'TIBBA25',
@@ -67,6 +71,7 @@ export class CartService {
       cart = await this.cartModel.create({
         locationId: locationObjectId,
         items: [{ productId: productObjectId, quantity }],
+        specialInstructions: '',
       });
       return cart;
     }
@@ -85,20 +90,33 @@ export class CartService {
     return cart;
   }
 
-  async updateCart(productId: string, quantity: number) {
+  async updateCart(
+    productId?: string,
+    quantity?: number,
+    specialInstructions?: string,
+  ) {
     const cart = await this.cartModel.findOne();
     if (!cart) return null;
 
-    const itemIndex = cart.items.findIndex(
-      (item) => item.productId.toString() === productId,
-    );
+    console.log('specialInstructions in service:', specialInstructions);
 
-    if (itemIndex === -1) return cart;
+    // ✅ FIX: save instruction
+    if (specialInstructions !== undefined) {
+      cart.specialInstructions = specialInstructions;
+    }
 
-    if (quantity <= 0) {
-      cart.items.splice(itemIndex, 1);
-    } else {
-      cart.items[itemIndex].quantity = quantity;
+    if (productId && quantity !== undefined) {
+      const itemIndex = cart.items.findIndex(
+        (item) => item.productId.toString() === productId,
+      );
+
+      if (itemIndex !== -1) {
+        if (quantity <= 0) {
+          cart.items.splice(itemIndex, 1);
+        } else {
+          cart.items[itemIndex].quantity = quantity;
+        }
+      }
     }
 
     if (cart.items.length === 0) {

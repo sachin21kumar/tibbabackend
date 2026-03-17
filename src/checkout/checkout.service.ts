@@ -104,6 +104,7 @@ export class OrdersService {
       shipping,
       total,
       status: 'pending',
+      specialInstructions: cart.specialInstructions || '',
     });
 
     await order.save();

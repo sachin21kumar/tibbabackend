@@ -38,8 +38,13 @@ export class CartController {
   updateCart(
     @Body('productId') productId: string,
     @Body('quantity') quantity: number,
+    @Body('specialInstructions') specialInstructions: string,
   ) {
-    return this.cartService.updateCart(productId, quantity);
+    return this.cartService.updateCart(
+      productId,
+      quantity,
+      specialInstructions,
+    );
   }
 
   @Delete('remove')

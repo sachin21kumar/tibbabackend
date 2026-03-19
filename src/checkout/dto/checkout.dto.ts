@@ -18,13 +18,16 @@ class LatLng {
 }
 export class CreateOrderDto {
   @IsString()
+  city: string;
+
+  @IsString()
   @IsNotEmpty()
   fullName: string;
 
-   @IsString()
+  @IsString()
   @IsNotEmpty()
   buildingName: string;
- 
+
   @IsString()
   @IsNotEmpty()
   address: string;
@@ -38,7 +41,6 @@ export class CreateOrderDto {
 
   @IsEmail()
   email: string;
-
 
   @IsString()
   deliveryType: string;

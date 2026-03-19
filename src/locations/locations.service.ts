@@ -184,52 +184,53 @@ export class LocationsService {
       description: t?.description,
       area: t?.area,
       location: t?.location,
+      slug: location.slug,
     };
   }
 
-  async update(id: string, dto: UpdateLocationDto) {
-    const location: any = await this.locationModel.findById(id);
+  async update(id: string, dto: any) {
+    const updateData: any = {};
+
+    if (dto.operation_hours !== undefined) {
+      updateData.operation_hours = dto.operation_hours;
+    }
+
+    if (dto.branchEmail !== undefined) {
+      updateData.branchEmail = dto.branchEmail;
+    }
+
+    if (dto.telephone !== undefined) {
+      updateData.telephone = dto.telephone;
+    }
+
+    if (dto.mobileNumber !== undefined) {
+      updateData.mobileNumber = dto.mobileNumber;
+    }
+
+    if (dto.lat !== undefined) {
+      updateData.lat = dto.lat;
+    }
+
+    if (dto.lng !== undefined) {
+      updateData.lng = dto.lng;
+    }
+
+    if (dto.slug !== undefined) {
+      updateData.slug = slugify(dto.slug, {
+        lower: true,
+        strict: true,
+        trim: true,
+      });
+    }
+
+    const location = await this.locationModel.findByIdAndUpdate(
+      id,
+      { $set: updateData },
+      { new: true, runValidators: false },
+    );
+
     if (!location) throw new NotFoundException('Location not found');
 
-    if (dto.name) {
-      location.translations.en.name = dto.name;
-      location.translations.ar.name = await this.translationService.toArabic(
-        dto.name,
-      );
-    }
-
-    if (dto.description !== undefined) {
-      location.translations.en.description = dto.description || '';
-      location.translations.ar.description =
-        await this.translationService.toArabic(dto.description || '');
-    }
-
-    if (dto.area) {
-      location.translations.en.area = dto.area;
-      location.translations.ar.area = await this.translationService.toArabic(
-        dto.area,
-      );
-    }
-
-    if (dto.location) {
-      location.translations.en.location = dto.location;
-      location.translations.ar.location =
-        await this.translationService.toArabic(dto.location);
-    }
-
-    Object.assign(location, {
-      operation_hours: dto.operation_hours,
-      branchEmail: dto.branchEmail,
-      telephone: dto.telephone || location.telephone,
-      mobileNumber: dto.mobileNumber || location.mobileNumber,
-      lat: dto.lat ?? location.lat,
-      lng: dto.lng ?? location.lng,
-      slug: dto.slug
-        ? slugify(dto.slug, { lower: true, strict: true, trim: true })
-        : location.slug,
-    });
-
-    await location.save();
     return location;
   }
 

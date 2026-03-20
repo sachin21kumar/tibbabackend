@@ -9,6 +9,30 @@ export class CartService {
     @InjectModel(Cart.name) private readonly cartModel: Model<Cart>,
   ) {}
 
+  private async calculateCartTotals(cart: any) {
+    await cart.populate('items.productId');
+
+    const subtotal = cart.items.reduce((total, item: any) => {
+      return total + (item.productId?.price || 0) * item.quantity;
+    }, 0);
+
+    let deliveryFee = 0;
+    if (subtotal < 100) {
+      deliveryFee = 3;
+    }
+
+    const discount = subtotal * 0.25;
+    const totalPrice = subtotal - discount + deliveryFee;
+
+    cart.subtotal = subtotal;
+    cart.discount = discount;
+    cart.deliveryFee = deliveryFee;
+    cart.totalPrice = totalPrice;
+    cart.couponCode = 'TIBBA25';
+
+    return cart;
+  }
+
   async getCart(locationId: string, locale: string = 'en') {
     const cart = await this.cartModel
       .findOne({ locationId: new Types.ObjectId(locationId) })
@@ -19,6 +43,7 @@ export class CartService {
       return {
         items: [],
         specialInstructions: '',
+        cutlery: false,
         subtotal: 0,
         discount: 0,
         deliveryFee: 0,
@@ -38,26 +63,15 @@ export class CartService {
       product.description = translation?.description || '';
     }
 
-    const subtotal = cart.items.reduce((total, item: any) => {
-      return total + (item.productId?.price || 0) * item.quantity;
-    }, 0);
-
-    let deliveryFee = 0;
-    if (subtotal < 100) {
-      deliveryFee = 3;
-    }
-
-    const discount = subtotal * 0.25;
-    const totalPrice = subtotal - discount + deliveryFee;
-    console.log('Cart details:', cart.specialInstructions);
     return {
       ...cart,
       specialInstructions: cart.specialInstructions || '',
-      subtotal,
-      discount,
-      deliveryFee,
-      totalPrice,
-      couponCode: 'TIBBA25',
+      cutlery: cart.cutlery || false,
+      subtotal: cart.subtotal || 0,
+      discount: cart.discount || 0,
+      deliveryFee: cart.deliveryFee || 0,
+      totalPrice: cart.totalPrice || 0,
+      couponCode: cart.couponCode || 'TIBBA25',
     };
   }
 
@@ -72,7 +86,16 @@ export class CartService {
         locationId: locationObjectId,
         items: [{ productId: productObjectId, quantity }],
         specialInstructions: '',
+        cutlery: false,
+        subtotal: 0,
+        discount: 0,
+        deliveryFee: 0,
+        totalPrice: 0,
+        couponCode: 'TIBBA25',
       });
+
+      await this.calculateCartTotals(cart);
+      await cart.save();
       return cart;
     }
 
@@ -86,6 +109,7 @@ export class CartService {
       cart.items.push({ productId: productObjectId, quantity });
     }
 
+    await this.calculateCartTotals(cart);
     await cart.save();
     return cart;
   }
@@ -94,17 +118,18 @@ export class CartService {
     productId?: string,
     quantity?: number,
     specialInstructions?: string,
+    cutlery?: boolean,
   ) {
     const cart = await this.cartModel.findOne();
     if (!cart) return null;
 
-    console.log('specialInstructions in service:', specialInstructions);
-
-    // ✅ FIX: save instruction
     if (specialInstructions !== undefined) {
       cart.specialInstructions = specialInstructions;
     }
 
+    if (cutlery !== undefined) {
+      cart.cutlery = cutlery;
+    }
     if (productId && quantity !== undefined) {
       const itemIndex = cart.items.findIndex(
         (item) => item.productId.toString() === productId,
@@ -124,6 +149,7 @@ export class CartService {
       return null;
     }
 
+    await this.calculateCartTotals(cart);
     await cart.save();
     return cart;
   }
@@ -141,6 +167,7 @@ export class CartService {
       return null;
     }
 
+    await this.calculateCartTotals(cart);
     await cart.save();
     return cart;
   }

@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { StripeService } from '../stripe/stripe.service';
 import { Order } from './checkout.schema';
 import { CreateOrderDto } from './dto/checkout.dto';
@@ -45,9 +45,10 @@ export class OrdersService {
 
   async checkout(dto: CreateOrderDto) {
     const cart = await this.cartModel
-      .findOne()
+      .findOne({ locationId: new Types.ObjectId(dto.locationId) })
       .populate('items.productId')
       .lean();
+
     if (!cart || cart.items.length === 0) {
       throw new NotFoundException(
         'Your Cart is empty please add product on cart.',
@@ -67,6 +68,7 @@ export class OrdersService {
           'Branch location coordinates are not set.',
         );
       }
+
       const distance = this.getDistanceKm(
         dto.addressLatLng.lat,
         dto.addressLatLng.lng,
@@ -84,30 +86,46 @@ export class OrdersService {
     }
 
     const items = cart.items.map((item: any) => {
+      const itemSubtotal = (item.productId?.price || 0) * item.quantity;
+
       return {
         productId: item.productId._id,
         name: item.productId.name,
         price: item.productId.price,
         quantity: item.quantity,
-        subtotal: item.productId.price * item.quantity,
+        subtotal: itemSubtotal,
+        total: itemSubtotal,
       };
     });
 
-    const subtotal = items.reduce((s, i) => s + i.subtotal, 0);
-    const shipping = 0;
-    const total = subtotal + shipping;
+    const subtotal =
+      typeof cart.subtotal === 'number'
+        ? cart.subtotal
+        : items.reduce((s, i) => s + i.subtotal, 0);
+
+    const discount = typeof cart.discount === 'number' ? cart.discount : 0;
+    const shipping =
+      typeof cart.deliveryFee === 'number' ? cart.deliveryFee : 0;
+    const total =
+      typeof cart.totalPrice === 'number'
+        ? cart.totalPrice
+        : subtotal - discount + shipping;
 
     const order = new this.orderModel({
       ...dto,
       items,
       subtotal,
+      discount,
       shipping,
       total,
       status: 'pending',
       specialInstructions: cart.specialInstructions || '',
+      cutlery: cart.cutlery || false,
+      couponCode: cart.couponCode || 'TIBBA25',
     });
 
     await order.save();
+
     if (dto.paymentMethod === 'stripe') {
       const paymentIntent = await this.stripeService.createPaymentIntent(
         total,
@@ -119,6 +137,7 @@ export class OrdersService {
         orderId: order._id,
       };
     }
+
     return {
       clientSecret: null,
       orderId: order._id,
@@ -140,7 +159,13 @@ export class OrdersService {
         .lean();
     }
 
-    await this.cartModel.deleteMany({});
+    if (data.locationId) {
+      await this.cartModel.deleteMany({
+        locationId: new Types.ObjectId(data.locationId),
+      });
+    } else {
+      await this.cartModel.deleteMany({});
+    }
 
     if (updatedOrder?.email) {
       await this.emailService.sendOrderConfirmation(

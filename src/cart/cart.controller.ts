@@ -39,11 +39,13 @@ export class CartController {
     @Body('productId') productId: string,
     @Body('quantity') quantity: number,
     @Body('specialInstructions') specialInstructions: string,
+    @Body('cutlery') cutlery: boolean,
   ) {
     return this.cartService.updateCart(
       productId,
       quantity,
       specialInstructions,
+      cutlery,
     );
   }
 

@@ -46,12 +46,12 @@ export class AddressValidateService {
 
     const isValid = Boolean(matchedCountry || matchedState);
 
-    await this.addressValidateModel.create({
-      address,
-      matchedCountry,
-      matchedState,
-      isValid,
-    } as any);
+    // await this.addressValidateModel.create({
+    //   address,
+    //   matchedCountry,
+    //   matchedState,
+    //   isValid,
+    // } as any);
 
     if (!isValid) {
       return {

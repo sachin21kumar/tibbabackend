@@ -86,6 +86,9 @@ export class Order {
 
   @Prop({ default: '' })
   specialInstructions: string;
+
+  @Prop({ required: false, default: false })
+  cutlery: boolean;
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);

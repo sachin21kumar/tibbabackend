@@ -4,6 +4,7 @@ import {
   IsOptional,
   IsString,
   Min,
+  IsBoolean,
 } from 'class-validator';
 
 export class AddToCartDto {
@@ -18,4 +19,11 @@ export class AddToCartDto {
   @IsMongoId()
   locationId: string;
 
+  @IsOptional()
+  @IsString()
+  specialInstructions?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  cutlery?: boolean;
 }

@@ -183,13 +183,47 @@ export class OrdersService {
 
   async updateOrderStatus(orderId: string, dto: UpdateOrderStatusDto) {
     const order = await this.orderModel.findById(orderId);
-    if (!order) throw new NotFoundException('Order not found');
+
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    const previousOrderStatus = order.OrderStatus;
+    const previousDriverName = order.driverName;
+    const previousDriverPhone = order.driverPhone;
 
     if (dto.OrderStatus) order.OrderStatus = dto.OrderStatus;
     if (dto.driverName) order.driverName = dto.driverName;
     if (dto.driverPhone) order.driverPhone = dto.driverPhone;
 
-    return order.save();
+    const updatedOrder = await order.save();
+
+    const statusChanged =
+      !!dto.OrderStatus && dto.OrderStatus !== previousOrderStatus;
+
+    const driverNameChanged =
+      typeof dto.driverName !== 'undefined' &&
+      dto.driverName !== previousDriverName;
+
+    const driverPhoneChanged =
+      typeof dto.driverPhone !== 'undefined' &&
+      dto.driverPhone !== previousDriverPhone;
+
+    const shouldSendStatusEmail =
+      !!updatedOrder.email &&
+      (statusChanged || driverNameChanged || driverPhoneChanged);
+
+    if (shouldSendStatusEmail) {
+      await this.emailService.sendOrderStatusUpdate(updatedOrder.email, {
+        orderId: updatedOrder._id.toString(),
+        orderStatus: updatedOrder.OrderStatus || '',
+        driverName: updatedOrder.driverName || '',
+        driverPhone: updatedOrder.driverPhone || '',
+        customerName: updatedOrder.fullName || '',
+      });
+    }
+
+    return updatedOrder;
   }
 
   async getAllOrders() {

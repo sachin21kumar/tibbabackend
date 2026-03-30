@@ -225,6 +225,7 @@ export class ProductService {
         price: p.price,
         imagePath: p.imagePath,
         categoryId: p.categoryId,
+        isActive: p.isActive,
       });
     }
 
@@ -232,12 +233,15 @@ export class ProductService {
   }
 
   async getProductById(id: string, locale: string = 'en') {
-    if (!Types.ObjectId.isValid(id))
+    if (!Types.ObjectId.isValid(id)) {
       throw new BadRequestException('Invalid product ID');
+    }
 
     const product: any = await this.productModel.findById(id).lean();
 
-    if (!product) throw new NotFoundException('Product not found');
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
 
     let t = product.translations?.[locale];
 
@@ -250,8 +254,11 @@ export class ProductService {
       name: t?.name,
       description: t?.description,
       price: product.price,
+      stock: product.stock,
+      isActive: product.isActive,
       imagePath: product.imagePath,
       categoryId: product.categoryId,
+      translations: product.translations,
     };
   }
 
@@ -327,17 +334,33 @@ export class ProductService {
       product.imagePath = image.filename;
     }
 
-    if (body.name !== undefined)
-      product.translations.en.name = body.name.trim();
+    const currentTranslations = product.translations || {
+      en: { name: '', description: '' },
+      ar: { name: '', description: '' },
+    };
 
-    if (body.nameAr !== undefined)
-      product.translations.ar.name = body.nameAr.trim();
-
-    if (body.description !== undefined)
-      product.translations.en.description = body.description.trim();
-
-    if (body.descriptionAr !== undefined)
-      product.translations.ar.description = body.descriptionAr.trim();
+    product.translations = {
+      en: {
+        name:
+          body.nameEn !== undefined
+            ? body.nameEn.trim()
+            : currentTranslations.en?.name,
+        description:
+          body.description !== undefined
+            ? body.description.trim()
+            : currentTranslations.en?.description,
+      },
+      ar: {
+        name:
+          body.nameAr !== undefined
+            ? body.nameAr.trim()
+            : currentTranslations.ar?.name,
+        description:
+          body.descriptionAr !== undefined
+            ? body.descriptionAr.trim()
+            : currentTranslations.ar?.description,
+      },
+    };
 
     if (body.price !== undefined) product.price = Number(body.price);
 
@@ -365,7 +388,9 @@ export class ProductService {
     if (body.preparationTime !== undefined)
       product.preparationTime = Number(body.preparationTime);
 
-    if (body.isActive !== undefined) product.isActive = body.isActive;
+    if (body.isActive !== undefined)
+      product.isActive =
+        body.isActive === '1' || body.isActive === 1 || body.isActive === true;
 
     if (body.itemType !== undefined) product.itemType = body.itemType;
 
@@ -376,13 +401,9 @@ export class ProductService {
       product.syncToAggregator = body.syncToAggregator;
 
     if (body.salePrice1 !== undefined) product.salePrice1 = body.salePrice1;
-
     if (body.salePrice2 !== undefined) product.salePrice2 = body.salePrice2;
-
     if (body.salePrice3 !== undefined) product.salePrice3 = body.salePrice3;
-
     if (body.salePrice4 !== undefined) product.salePrice4 = body.salePrice4;
-
     if (body.salePrice5 !== undefined) product.salePrice5 = body.salePrice5;
 
     await product.save();

@@ -12,9 +12,10 @@ import { TranslationModule } from 'src/common/translation/translation.module';
       { name: Product.name, schema: ProductSchema },
       { name: Category.name, schema: CategorySchema },
     ]),
-    TranslationModule
+    TranslationModule,
   ],
   providers: [ProductService],
   controllers: [ProductController],
+  exports: [MongooseModule],
 })
 export class ProductsModule {}

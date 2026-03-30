@@ -17,7 +17,7 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { ProductService } from './products.service';
 import { CreateProductDto } from './products.dto';
-import * as fs from 'fs'
+import * as fs from 'fs';
 @Controller('product')
 export class ProductController {
   constructor(private readonly productService: ProductService) {}

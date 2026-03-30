@@ -51,6 +51,7 @@ export class ProductService {
       return '';
     }
   }
+
   ensureUploadFolders() {
     const csvPath = './uploads/csv';
     const imagePath = './uploads/products';
@@ -63,6 +64,7 @@ export class ProductService {
       fs.mkdirSync(imagePath, { recursive: true });
     }
   }
+
   async importProducts(file: any) {
     this.ensureUploadFolders();
     if (!file) throw new BadRequestException('File is required');
@@ -123,21 +125,23 @@ export class ProductService {
 
       products.push({
         price,
-
         categoryId: new Types.ObjectId(categoryId),
-
         subCategoryId: mongoSubCategoryId,
-
         imagePath,
+
+        locationIds: row.locationIds
+          ? String(row.locationIds)
+              .split(',')
+              .map((id) => id.trim())
+              .filter((id) => Types.ObjectId.isValid(id))
+              .map((id) => new Types.ObjectId(id))
+          : [],
 
         foodType: row.foodType,
         taxProductGroup: row.taxProductGroup || 'food',
         kitchenDept: row.kitchenDept,
-
         stock: row.stock ? Number(row.stock) : 0,
-
         preparationTime: row.preparationTime ? Number(row.preparationTime) : 0,
-
         isActive: row.isActive ?? 1,
         itemType: row.itemType ?? 0,
         platformStatus: row.platformStatus ?? 1,
@@ -177,6 +181,7 @@ export class ProductService {
     locale: string = 'en',
     categoryId?: string,
     name?: string,
+    locationId?: string,
     page: number = 1,
     limit: number = 9,
     sortBy: 'price' | 'name' = 'price',
@@ -186,6 +191,10 @@ export class ProductService {
 
     if (categoryId && Types.ObjectId.isValid(categoryId)) {
       filter.categoryId = new Types.ObjectId(categoryId);
+    }
+
+    if (locationId && Types.ObjectId.isValid(locationId)) {
+      filter.locationIds = new Types.ObjectId(locationId);
     }
 
     if (name && name.trim() !== '') {
@@ -225,6 +234,7 @@ export class ProductService {
         price: p.price,
         imagePath: p.imagePath,
         categoryId: p.categoryId,
+        locationIds: p.locationIds,
         isActive: p.isActive,
       });
     }
@@ -258,6 +268,7 @@ export class ProductService {
       isActive: product.isActive,
       imagePath: product.imagePath,
       categoryId: product.categoryId,
+      locationIds: product.locationIds,
       translations: product.translations,
     };
   }
@@ -280,6 +291,12 @@ export class ProductService {
         data.subCategoryId && Types.ObjectId.isValid(data.subCategoryId)
           ? new Types.ObjectId(data.subCategoryId)
           : undefined,
+
+      locationIds: Array.isArray(data.locationIds)
+        ? data.locationIds
+            .filter((id) => Types.ObjectId.isValid(id))
+            .map((id) => new Types.ObjectId(id))
+        : [],
 
       imagePath: image ? image.filename : '',
 
@@ -314,10 +331,40 @@ export class ProductService {
     });
   }
 
-  async deleteProduct(id: string) {
-    const product = await this.productModel.findByIdAndDelete(id);
+  async deleteProduct(id: string, locationId?: string) {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new BadRequestException('Invalid product ID');
+    }
+
+    const product = await this.productModel.findById(id);
 
     if (!product) throw new NotFoundException('Product not found');
+
+    // If locationId provided, just remove that location from the product
+    if (locationId) {
+      if (!Types.ObjectId.isValid(locationId)) {
+        throw new BadRequestException('Invalid locationId');
+      }
+
+      const locationObjectId = new Types.ObjectId(locationId);
+
+      const exists = (product.locationIds as Types.ObjectId[]).some((loc) =>
+        loc.equals(locationObjectId),
+      );
+
+      if (!exists) {
+        throw new NotFoundException('Location not found in this product');
+      }
+
+      await this.productModel.findByIdAndUpdate(id, {
+        $pull: { locationIds: locationObjectId },
+      });
+
+      return { message: 'Location removed from product successfully' };
+    }
+
+    // No locationId provided — delete the entire product
+    await this.productModel.findByIdAndDelete(id);
 
     return { message: 'Product deleted successfully' };
   }
@@ -375,6 +422,12 @@ export class ProductService {
       Types.ObjectId.isValid(body.subCategoryId)
     )
       product.subCategoryId = new Types.ObjectId(body.subCategoryId);
+
+    if (body.locationIds !== undefined && Array.isArray(body.locationIds)) {
+      product.locationIds = body.locationIds
+        .filter((id) => Types.ObjectId.isValid(id))
+        .map((id) => new Types.ObjectId(id));
+    }
 
     if (body.foodType !== undefined) product.foodType = body.foodType;
 

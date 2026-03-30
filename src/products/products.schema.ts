@@ -18,6 +18,13 @@ export class Product {
   subCategoryId?: Types.ObjectId;
 
   @Prop({
+    type: [Types.ObjectId],
+    ref: 'Location',
+    required: true,
+  })
+  locationIds: Types.ObjectId[];
+
+  @Prop({
     type: Object,
     required: true,
     default: {

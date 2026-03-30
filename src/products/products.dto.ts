@@ -4,7 +4,7 @@ import {
   IsOptional,
   IsMongoId,
   IsNumber,
-  IsBoolean,
+  IsArray,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -57,6 +57,11 @@ export class CreateProductDto {
   @IsMongoId()
   @IsOptional()
   subCategoryId?: string;
+
+  @IsArray()
+  @IsMongoId({ each: true })
+  @IsNotEmpty()
+  locationIds: string[];
 
   @IsString()
   @IsOptional()

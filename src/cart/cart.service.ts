@@ -21,14 +21,15 @@ export class CartService {
       deliveryFee = 3;
     }
 
-    const discount = subtotal * 0.25;
-    const totalPrice = subtotal - discount + deliveryFee;
+    // 25% discount removed → return total price without any discount
+    const discount = 0;
+    const totalPrice = subtotal + deliveryFee;
 
     cart.subtotal = subtotal;
     cart.discount = discount;
     cart.deliveryFee = deliveryFee;
     cart.totalPrice = totalPrice;
-    cart.couponCode = 'TIBBA25';
+    cart.couponCode = null;
 
     return cart;
   }
@@ -48,7 +49,7 @@ export class CartService {
         discount: 0,
         deliveryFee: 0,
         totalPrice: 0,
-        couponCode: 'TIBBA25',
+        couponCode: null,
       };
     }
 
@@ -71,7 +72,7 @@ export class CartService {
       discount: cart.discount || 0,
       deliveryFee: cart.deliveryFee || 0,
       totalPrice: cart.totalPrice || 0,
-      couponCode: cart.couponCode || 'TIBBA25',
+      couponCode: cart.couponCode || null,
     };
   }
 
@@ -91,7 +92,7 @@ export class CartService {
         discount: 0,
         deliveryFee: 0,
         totalPrice: 0,
-        couponCode: 'TIBBA25',
+        couponCode: "",
       });
 
       await this.calculateCartTotals(cart);

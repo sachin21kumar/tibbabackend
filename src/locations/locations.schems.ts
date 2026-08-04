@@ -40,6 +40,9 @@ export class Location {
   @Prop()
   mobileNumber?: string;
 
+  @Prop()
+  googleLink?: string;
+
   @Prop({ default: 10 })
   deliveryRadiusKm: number;
 

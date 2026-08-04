@@ -40,6 +40,10 @@ export class CreateLocationDto {
   @IsString()
   mobileNumber?: string;
 
+  @IsOptional()
+  @IsString()
+  googleLink?: string;
+
   @Type(() => Number)
   @IsNumber()
   lat: number;

@@ -102,6 +102,7 @@ export class LocationsService {
       lat: parseFloat(dto.lat as any),
       lng: parseFloat(dto.lng as any),
       imagePath: dto.imagePath || null,
+      googleLink: dto.googleLink || undefined,
       slug,
     });
   }
@@ -191,6 +192,32 @@ export class LocationsService {
   async update(id: string, dto: any) {
     const updateData: any = {};
 
+    if (dto.name !== undefined) {
+      updateData['translations.en.name'] = dto.name;
+      updateData['translations.ar.name'] = await this.translationService.toArabic(
+        dto.name,
+      );
+    }
+
+    if (dto.description !== undefined) {
+      updateData['translations.en.description'] = dto.description;
+      updateData['translations.ar.description'] =
+        await this.translationService.toArabic(dto.description);
+    }
+
+    if (dto.area !== undefined) {
+      updateData['translations.en.area'] = dto.area;
+      updateData['translations.ar.area'] = await this.translationService.toArabic(
+        dto.area,
+      );
+    }
+
+    if (dto.location !== undefined) {
+      updateData['translations.en.location'] = dto.location;
+      updateData['translations.ar.location'] =
+        await this.translationService.toArabic(dto.location);
+    }
+
     if (dto.operation_hours !== undefined) {
       updateData.operation_hours = dto.operation_hours;
     }
@@ -205,6 +232,10 @@ export class LocationsService {
 
     if (dto.mobileNumber !== undefined) {
       updateData.mobileNumber = dto.mobileNumber;
+    }
+
+    if (dto.googleLink !== undefined) {
+      updateData.googleLink = dto.googleLink;
     }
 
     if (dto.lat !== undefined) {

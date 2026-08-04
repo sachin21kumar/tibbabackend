@@ -72,7 +72,7 @@ export class LocationsService {
 
     const enName = dto.name.trim();
     const enDesc = dto.description?.trim() || '';
-    const enArea = dto.area.trim();
+    const enArea = dto.area?.trim() || '';
     const enLocation = dto.location.trim();
 
     const arName = await this.translationService.toArabic(enName);
@@ -99,8 +99,8 @@ export class LocationsService {
       branchEmail: dto.branchEmail,
       telephone: dto.telephone,
       mobileNumber: dto.mobileNumber,
-      lat: parseFloat(dto.lat as any),
-      lng: parseFloat(dto.lng as any),
+      lat: dto.lat !== undefined ? parseFloat(dto.lat as any) : undefined,
+      lng: dto.lng !== undefined ? parseFloat(dto.lng as any) : undefined,
       imagePath: dto.imagePath || null,
       googleLink: dto.googleLink || undefined,
       slug,

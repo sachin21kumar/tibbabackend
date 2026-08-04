@@ -16,9 +16,9 @@ export class CreateLocationDto {
   @IsString()
   description?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  area: string;
+  area?: string;
 
   @IsString()
   @IsNotEmpty()
@@ -44,13 +44,15 @@ export class CreateLocationDto {
   @IsString()
   googleLink?: string;
 
+  @IsOptional()
   @Type(() => Number)
   @IsNumber()
-  lat: number;
+  lat?: number;
 
+  @IsOptional()
   @Type(() => Number)
   @IsNumber()
-  lng: number;
+  lng?: number;
 
   @IsOptional()
   @IsString()

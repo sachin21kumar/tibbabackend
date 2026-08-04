@@ -17,16 +17,16 @@ export class Location {
     {
       name: string;
       description?: string;
-      area: string;
+      area?: string;
       location: string;
     }
   >;
 
-  @Prop({ required: true })
-  lat: number;
+  @Prop()
+  lat?: number;
 
-  @Prop({ required: true })
-  lng: number;
+  @Prop()
+  lng?: number;
 
   @Prop()
   operation_hours?: string;
@@ -46,8 +46,8 @@ export class Location {
   @Prop({ default: 10 })
   deliveryRadiusKm: number;
 
-  @Prop({ required: true })
-  imagePath: string;
+  @Prop()
+  imagePath?: string;
 
   @Prop({ unique: true, index: true })
   slug: string;

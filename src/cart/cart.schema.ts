@@ -17,6 +17,11 @@ export class Cart {
   @Prop({ required: true, type: Types.ObjectId, ref: 'Locations' })
   locationId: Types.ObjectId;
 
+  // Identifies the guest's browser (sent via the x-guest-id header) so each
+  // visitor gets their own cart instead of sharing one per location.
+  @Prop({ required: true })
+  guestId: string;
+
   @Prop({ default: '' })
   specialInstructions: string;
 
@@ -40,3 +45,5 @@ export class Cart {
 }
 
 export const CartSchema = SchemaFactory.createForClass(Cart);
+
+CartSchema.index({ locationId: 1, guestId: 1 });

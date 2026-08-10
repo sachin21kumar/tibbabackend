@@ -16,6 +16,7 @@ async function bootstrap() {
     'Content-Type',
     'Authorization',
     'x-locale',
+    'x-guest-id',
   ],
 });
   app.useGlobalPipes(

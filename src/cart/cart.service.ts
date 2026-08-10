@@ -34,9 +34,9 @@ export class CartService {
     return cart;
   }
 
-  async getCart(locationId: string, locale: string = 'en') {
+  async getCart(locationId: string, guestId: string, locale: string = 'en') {
     const cart = await this.cartModel
-      .findOne({ locationId: new Types.ObjectId(locationId) })
+      .findOne({ locationId: new Types.ObjectId(locationId), guestId })
       .populate('items.productId')
       .lean();
 
@@ -76,15 +76,24 @@ export class CartService {
     };
   }
 
-  async addToCart(productId: string, quantity = 1, locationId: string) {
+  async addToCart(
+    productId: string,
+    quantity = 1,
+    locationId: string,
+    guestId: string,
+  ) {
     const productObjectId = new Types.ObjectId(productId);
     const locationObjectId = new Types.ObjectId(locationId);
 
-    let cart = await this.cartModel.findOne({ locationId: locationObjectId });
+    let cart = await this.cartModel.findOne({
+      locationId: locationObjectId,
+      guestId,
+    });
 
     if (!cart) {
       cart = await this.cartModel.create({
         locationId: locationObjectId,
+        guestId,
         items: [{ productId: productObjectId, quantity }],
         specialInstructions: '',
         cutlery: false,
@@ -116,12 +125,17 @@ export class CartService {
   }
 
   async updateCart(
+    locationId: string,
+    guestId: string,
     productId?: string,
     quantity?: number,
     specialInstructions?: string,
     cutlery?: boolean,
   ) {
-    const cart = await this.cartModel.findOne();
+    const cart = await this.cartModel.findOne({
+      locationId: new Types.ObjectId(locationId),
+      guestId,
+    });
     if (!cart) return null;
 
     if (specialInstructions !== undefined) {
@@ -155,8 +169,11 @@ export class CartService {
     return cart;
   }
 
-  async removeFromCart(productId: string) {
-    const cart = await this.cartModel.findOne();
+  async removeFromCart(productId: string, locationId: string, guestId: string) {
+    const cart = await this.cartModel.findOne({
+      locationId: new Types.ObjectId(locationId),
+      guestId,
+    });
     if (!cart) return null;
 
     cart.items = cart.items.filter(
@@ -173,13 +190,24 @@ export class CartService {
     return cart;
   }
 
-  async clearCart() {
-    return this.cartModel.findOneAndDelete({});
+  async clearCart(locationId: string, guestId: string) {
+    return this.cartModel.findOneAndDelete({
+      locationId: new Types.ObjectId(locationId),
+      guestId,
+    });
   }
 
-  async getCartItemByProductId(productId: string) {
+  async getCartItemByProductId(
+    productId: string,
+    locationId: string,
+    guestId: string,
+  ) {
     return this.cartModel.findOne(
-      { 'items.productId': new Types.ObjectId(productId) },
+      {
+        locationId: new Types.ObjectId(locationId),
+        guestId,
+        'items.productId': new Types.ObjectId(productId),
+      },
       { 'items.$': 1 },
     );
   }

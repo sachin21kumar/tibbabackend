@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, Patch, Post, Req } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Headers,
+  Param,
+  Patch,
+  Post,
+  Req,
+} from '@nestjs/common';
 import { OrdersService } from './checkout.service';
 import { CreateOrderDto } from './dto/checkout.dto';
 import { UpdateOrderStatusDto } from './dto/update.status.dto';
@@ -8,8 +17,11 @@ export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
   @Post()
-  checkout(@Body() dto: CreateOrderDto) {
-    return this.ordersService.checkout(dto);
+  checkout(
+    @Body() dto: CreateOrderDto,
+    @Headers('x-guest-id') guestId: string,
+  ) {
+    return this.ordersService.checkout(dto, guestId);
   }
 
   @Post('confirm')

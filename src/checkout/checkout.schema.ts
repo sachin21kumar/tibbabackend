@@ -63,6 +63,11 @@ export class Order {
   @Prop({ required: true, type: Types.ObjectId, ref: 'Locations' })
   locationId: Types.ObjectId;
 
+  // Carried over from the cart so payment confirmation can clear only this
+  // guest's cart instead of every cart at the branch.
+  @Prop({ required: false })
+  guestId?: string;
+
   @Prop({
     type: {
       lat: { type: Number, required: true },

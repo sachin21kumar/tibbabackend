@@ -43,9 +43,13 @@ export class OrdersService {
     return R * c;
   }
 
-  async checkout(dto: CreateOrderDto) {
+  async checkout(dto: CreateOrderDto, guestId: string) {
+    if (!guestId) {
+      throw new BadRequestException('x-guest-id header is required.');
+    }
+
     const cart = await this.cartModel
-      .findOne({ locationId: new Types.ObjectId(dto.locationId) })
+      .findOne({ locationId: new Types.ObjectId(dto.locationId), guestId })
       .populate('items.productId')
       .lean();
 
@@ -122,6 +126,7 @@ export class OrdersService {
       specialInstructions: cart.specialInstructions || '',
       cutlery: cart.cutlery || false,
       couponCode: cart.couponCode || 'TIBBA25',
+      guestId,
     });
 
     await order.save();
@@ -159,12 +164,11 @@ export class OrdersService {
         .lean();
     }
 
-    if (data.locationId) {
+    if (data.locationId && data.guestId) {
       await this.cartModel.deleteMany({
         locationId: new Types.ObjectId(data.locationId),
+        guestId: data.guestId,
       });
-    } else {
-      await this.cartModel.deleteMany({});
     }
 
     if (updatedOrder?.email) {

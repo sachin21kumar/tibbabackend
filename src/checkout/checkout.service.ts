@@ -94,7 +94,8 @@ export class OrdersService {
 
       return {
         productId: item.productId._id,
-        name: item.productId.name,
+        name: item.productId.translations?.en?.name || '',
+        nameAr: item.productId.translations?.ar?.name || '',
         price: item.productId.price,
         quantity: item.quantity,
         subtotal: itemSubtotal,
@@ -182,7 +183,11 @@ export class OrdersService {
   }
 
   async getOrdersByLocation(locationId: string) {
-    return this.orderModel.find({ locationId }).sort({ createdAt: -1 }).lean();
+    return this.orderModel
+      .find({ locationId })
+      .sort({ createdAt: -1 })
+      .populate('items.productId', 'translations')
+      .lean();
   }
 
   async updateOrderStatus(orderId: string, dto: UpdateOrderStatusDto) {
@@ -231,6 +236,9 @@ export class OrdersService {
   }
 
   async getAllOrders() {
-    return this.orderModel.find().lean();
+    return this.orderModel
+      .find()
+      .populate('items.productId', 'translations')
+      .lean();
   }
 }

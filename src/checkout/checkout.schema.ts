@@ -25,6 +25,7 @@ export class Order {
     {
       productId: { type: Types.ObjectId, ref: 'Product' },
       name: String,
+      nameAr: String,
       price: Number,
       quantity: Number,
       subtotal: Number,
